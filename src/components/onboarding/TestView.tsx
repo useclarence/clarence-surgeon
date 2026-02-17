@@ -11,6 +11,11 @@ export function TestView() {
 
     if (!agent) return null;
 
+    const handleModify = () => {
+        window.alert("You'll be redirected to Step 1 to choose another assistant template.");
+        actions.goToStep(1);
+    };
+
     return (
         <div className="h-full flex flex-col bg-bg-primary">
             {/* Header */}
@@ -37,9 +42,15 @@ export function TestView() {
                         <span className="text-[10px] uppercase tracking-[0.3em] text-accent-blue font-bold opacity-60">Testing Assistant</span>
                         <span className="w-1 h-1 rounded-full bg-border" />
                         <span className="text-sm font-medium text-text-primary">{agent.name}</span>
+                        <button
+                            onClick={handleModify}
+                            className="ml-2 px-2.5 py-1 rounded-md border border-border/50 text-[10px] uppercase tracking-[0.16em] font-semibold text-text-secondary hover:text-accent-blue hover:border-accent-blue/40 hover:bg-bg-secondary/50 transition-all cursor-pointer"
+                        >
+                            Modify
+                        </button>
                     </div>
                     <p className="text-sm text-text-secondary mt-4 ml-14 max-w-2xl leading-relaxed">
-                        Run sample calls to see triage decisions, routing recommendations, and clinical rationale.
+                        Run pre-recorded calls or live calls to see triage decisions, routing recommendations, and clinical rationale.
                     </p>
                 </motion.div>
 
@@ -53,7 +64,7 @@ export function TestView() {
                                 : 'text-text-secondary hover:text-text-primary opacity-60 hover:opacity-100'
                         }`}
                     >
-                        Review Sample Calls
+                        Observe
                         {state.testMode === 'observe' && (
                             <motion.div
                                 layoutId="test-tab-underline"
@@ -69,7 +80,7 @@ export function TestView() {
                                 : 'text-text-secondary hover:text-text-primary opacity-60 hover:opacity-100'
                         }`}
                     >
-                        Run Live Test Call
+                        Role-play
                         {state.testMode === 'play' && (
                             <motion.div
                                 layoutId="test-tab-underline"

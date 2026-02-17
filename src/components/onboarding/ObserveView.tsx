@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useOnboardingFlowContext } from '@/hooks/useOnboardingFlow';
 
 interface ScenarioStep {
-    speaker: 'patient' | 'agent';
+    speaker: 'patient' | 'assistant';
     text: string;
     policyHighlight?: string;
 }
@@ -29,13 +29,13 @@ const SCENARIOS: Scenario[] = [
         chiefComplaint: 'Persistent shoulder pain and weakness when lifting overhead for 4 months',
         background: 'Completed 8 weeks of physical therapy and oral anti-inflammatories without improvement. MRI from last month shows a full-thickness supraspinatus tear.',
         steps: [
-            { speaker: 'agent', text: 'Good morning. I\'m calling from Dr. Martin\'s office to help assess your referral. Could you describe your main concern?' },
+            { speaker: 'assistant', text: 'Good morning. I\'m calling from Dr. Martin\'s office to help assess your referral. Could you describe your main concern?' },
             { speaker: 'patient', text: 'My right shoulder has been hurting for months, and now I can barely lift my arm to place dishes in the cabinet.' },
-            { speaker: 'agent', text: 'I\'m sorry to hear that. Have you tried any treatment so far — physical therapy, medications, injections?' },
+            { speaker: 'assistant', text: 'I\'m sorry to hear that. Have you tried any treatment so far — physical therapy, medications, injections?' },
             { speaker: 'patient', text: 'Yes, I did 8 weeks of PT and took anti-inflammatory medication, but I still have weakness and night pain.' },
-            { speaker: 'agent', text: 'Do you have recent shoulder imaging — MRI or ultrasound within the last 6 months?', policyHighlight: 'Checking readiness: shoulder imaging prerequisite' },
+            { speaker: 'assistant', text: 'Do you have recent shoulder imaging — MRI or ultrasound within the last 6 months?', policyHighlight: 'Checking readiness: shoulder imaging prerequisite' },
             { speaker: 'patient', text: 'Yes, I had an MRI last month. It showed a full-thickness rotator cuff tear.' },
-            { speaker: 'agent', text: 'Thank you. Because you have persistent functional weakness, failed conservative care, and recent imaging confirming a full-thickness tear, I\'ll book you for a priority surgical consultation with Dr. Martin.', policyHighlight: 'High potential: full-thickness cuff tear + failed conservative treatment' },
+            { speaker: 'assistant', text: 'Thank you. Because you have persistent functional weakness, failed conservative care, and recent imaging confirming a full-thickness tear, I\'ll book you for a priority surgical consultation with Dr. Martin.', policyHighlight: 'High potential: full-thickness cuff tear + failed conservative treatment' },
         ],
         triageResult: 'high_potential',
         triageSummary: 'Patient meets high-potential shoulder surgery criteria: full-thickness rotator cuff tear on recent MRI, meaningful weakness, and failed 6+ weeks of conservative treatment. Scheduled for priority consultation.',
@@ -47,13 +47,13 @@ const SCENARIOS: Scenario[] = [
         chiefComplaint: 'Occasional shoulder soreness after weekend tennis',
         background: 'No major trauma, no instability episodes, full daily function, and no prior structured conservative treatment.',
         steps: [
-            { speaker: 'agent', text: 'Hello, I\'m calling regarding your referral to Dr. Martin. Can you tell me about your symptoms?' },
+            { speaker: 'assistant', text: 'Hello, I\'m calling regarding your referral to Dr. Martin. Can you tell me about your symptoms?' },
             { speaker: 'patient', text: 'My shoulder gets sore after tennis on weekends. I can still work and sleep fine, but I wanted to see if surgery could just fix it quickly.' },
-            { speaker: 'agent', text: 'Have you had dislocations, major weakness, or trouble with daily activities like dressing or reaching overhead?' },
+            { speaker: 'assistant', text: 'Have you had dislocations, major weakness, or trouble with daily activities like dressing or reaching overhead?' },
             { speaker: 'patient', text: 'No dislocations, and I can do all that. It mostly flares after long matches.' },
-            { speaker: 'agent', text: 'Have you completed a structured program yet — physical therapy, activity modification, or injection?', policyHighlight: 'Checking readiness: conservative treatment prerequisite' },
+            { speaker: 'assistant', text: 'Have you completed a structured program yet — physical therapy, activity modification, or injection?', policyHighlight: 'Checking readiness: conservative treatment prerequisite' },
             { speaker: 'patient', text: 'No, I haven\'t tried any formal treatment yet.' },
-            { speaker: 'agent', text: 'Given your mild intermittent symptoms and preserved function, surgery is not the right first step. I\'ll route you to sports medicine and a 6-week shoulder PT plan, then reassess if symptoms persist.', policyHighlight: 'Non-qualified: mild overuse symptoms without structural red flags' },
+            { speaker: 'assistant', text: 'Given your mild intermittent symptoms and preserved function, surgery is not the right first step. I\'ll route you to sports medicine and a 6-week shoulder PT plan, then reassess if symptoms persist.', policyHighlight: 'Non-qualified: mild overuse symptoms without structural red flags' },
         ],
         triageResult: 'non_qualified',
         triageSummary: 'Patient is non-qualified for shoulder surgery at this stage: mild activity-related pain, no instability or functional loss, and no conservative treatment trial. Redirected to sports medicine plus structured PT.',
@@ -65,13 +65,13 @@ const SCENARIOS: Scenario[] = [
         chiefComplaint: 'Chronic shoulder pain with loss of motion and increasing night pain',
         background: 'Shoulder MRI from 9 months ago showed a large rotator cuff tear with early arthritic change. Symptoms and stiffness have worsened recently.',
         steps: [
-            { speaker: 'agent', text: 'Good afternoon, Ms. Laurent. I\'m calling about your referral. How are you doing today?' },
+            { speaker: 'assistant', text: 'Good afternoon, Ms. Laurent. I\'m calling about your referral. How are you doing today?' },
             { speaker: 'patient', text: 'Not great. I can\'t raise my arm well anymore, and the shoulder pain wakes me up most nights.' },
-            { speaker: 'agent', text: 'When did this start getting worse?' },
+            { speaker: 'assistant', text: 'When did this start getting worse?' },
             { speaker: 'patient', text: 'Over the last 6 months. I used to manage, but now I struggle even getting dressed.' },
-            { speaker: 'agent', text: 'Do you have shoulder imaging from the last 6 months?', policyHighlight: 'Checking readiness: imaging within 6 months' },
+            { speaker: 'assistant', text: 'Do you have shoulder imaging from the last 6 months?', policyHighlight: 'Checking readiness: imaging within 6 months' },
             { speaker: 'patient', text: 'No, my MRI is from about 9 months ago.' },
-            { speaker: 'agent', text: 'Because your symptoms progressed and imaging is out of date, we need updated shoulder imaging before final surgical planning. I\'ll arrange new imaging and then a consultation to discuss repair versus reverse shoulder replacement.', policyHighlight: 'In-between: large tear in older patient, needs updated imaging for repair vs arthroplasty decision' },
+            { speaker: 'assistant', text: 'Because your symptoms progressed and imaging is out of date, we need updated shoulder imaging before final surgical planning. I\'ll arrange new imaging and then a consultation to discuss repair versus reverse shoulder replacement.', policyHighlight: 'In-between: large tear in older patient, needs updated imaging for repair vs arthroplasty decision' },
         ],
         triageResult: 'in_between',
         triageSummary: 'Patient falls in the in-between category: worsening function and pain with prior evidence of a large cuff tear, but imaging is outdated. Updated imaging is required to decide between rotator cuff repair and reverse shoulder arthroplasty.',
@@ -187,7 +187,7 @@ export function ObserveView() {
                                                             : 'bg-bg-panel border border-border/40'
                                                     } rounded-xl px-4 py-2.5`}>
                                                         <p className="text-[10px] font-medium text-text-secondary mb-1">
-                                                            {step.speaker === 'patient' ? 'Patient' : 'Agent'}
+                                                            {step.speaker === 'patient' ? 'Patient' : 'Assistant'}
                                                         </p>
                                                         <p className="text-xs text-text-primary leading-relaxed">{step.text}</p>
                                                         {step.policyHighlight && (

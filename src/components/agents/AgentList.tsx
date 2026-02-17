@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { motion } from 'framer-motion';
 import type { Agent } from '@/lib/types';
 import { AgentCard } from './AgentCard';
 

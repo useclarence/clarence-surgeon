@@ -6,10 +6,11 @@ import type { AgentTemplate } from '@/lib/templates';
 interface TemplateCardProps {
     template: AgentTemplate;
     onSelect: (templateId: string) => void;
+    onView: (templateId: string) => void;
     isCreating: boolean;
 }
 
-export function TemplateCard({ template, onSelect, isCreating }: TemplateCardProps) {
+export function TemplateCard({ template, onSelect, onView, isCreating }: TemplateCardProps) {
     const ruleCount = template.policy.rules.length;
     const itemCount = Object.values(template.policy.blocks).reduce(
         (sum, block) => sum + block.items.length,
@@ -17,9 +18,14 @@ export function TemplateCard({ template, onSelect, isCreating }: TemplateCardPro
     );
     const isAvailable = template.available === true;
     const canSelect = isAvailable && !isCreating;
+    const canView = isAvailable;
     const handleSelect = () => {
         if (!canSelect) return;
         onSelect(template.id);
+    };
+    const handleView = () => {
+        if (!canView) return;
+        onView(template.id);
     };
 
     return (
@@ -88,16 +94,30 @@ export function TemplateCard({ template, onSelect, isCreating }: TemplateCardPro
                     </span>
                 </div>
 
-                <button
-                    onClick={(event) => {
-                        event.stopPropagation();
-                        handleSelect();
-                    }}
-                    disabled={isCreating || !isAvailable}
-                    className="text-xs font-medium text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20 px-3.5 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
-                >
-                    {isCreating ? 'Creating...' : 'Select'}
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onKeyDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            handleView();
+                        }}
+                        disabled={!canView}
+                        className="text-xs font-medium text-text-secondary border border-border/50 bg-bg-primary/45 hover:bg-bg-primary/65 px-3 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        View
+                    </button>
+                    <button
+                        onKeyDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                            event.stopPropagation();
+                            handleSelect();
+                        }}
+                        disabled={isCreating || !isAvailable}
+                        className="text-xs font-medium text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20 px-3.5 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                    >
+                        {isCreating ? 'Creating...' : 'Select'}
+                    </button>
+                </div>
             </div>
         </motion.div>
     );

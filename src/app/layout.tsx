@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
     title: 'SurgeonLogic — Formalize Clinical Decision-Making with AI',
-    description: 'Voice-powered AI agent that helps surgeons formalize and challenge their clinical decision logic.',
+    description: 'Voice-powered AI assistant that helps surgeons formalize and challenge their clinical decision logic.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

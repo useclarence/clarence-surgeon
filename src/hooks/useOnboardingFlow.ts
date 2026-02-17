@@ -76,7 +76,7 @@ export function useOnboardingFlow() {
                 }),
             });
 
-            if (!res.ok) throw new Error('Failed to create agent from template');
+            if (!res.ok) throw new Error('Failed to create assistant from template');
 
             const agent: Agent = await res.json();
             dispatch({ type: 'SELECT_AGENT', agent });

@@ -86,7 +86,7 @@ export function AgentCard({ agent, onDelete }: AgentCardProps) {
                                     setConfirmDelete(true);
                                 }}
                                 className="opacity-0 group-hover:opacity-100 text-text-secondary hover:text-accent-red transition-all cursor-pointer p-1"
-                                title="Delete agent"
+                                title="Delete assistant"
                             >
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                                     <polyline points="3 6 5 6 21 6" />

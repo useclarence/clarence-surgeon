@@ -9,8 +9,8 @@ import { motion } from 'framer-motion';
 function StepCircle({ number, state }: { number: number; state: 'active' | 'completed' | 'locked' }) {
     if (state === 'completed') {
         return (
-            <div className="w-8 h-8 rounded-full bg-green-500/20 border border-green-500/40 flex items-center justify-center flex-shrink-0">
-                <svg className="w-4 h-4 text-green-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <div className="w-10 h-10 rounded-full bg-accent-green/15 border border-accent-green/35 flex items-center justify-center flex-shrink-0">
+                <svg className="w-[18px] h-[18px] text-accent-green" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
             </div>
@@ -19,7 +19,7 @@ function StepCircle({ number, state }: { number: number; state: 'active' | 'comp
 
     if (state === 'locked') {
         return (
-            <div className="w-8 h-8 rounded-full bg-bg-primary/50 border border-border/30 flex items-center justify-center flex-shrink-0 opacity-40">
+            <div className="w-10 h-10 rounded-full bg-bg-secondary/70 border border-border/60 flex items-center justify-center flex-shrink-0">
                 <svg className="w-3.5 h-3.5 text-text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                 </svg>
@@ -28,8 +28,8 @@ function StepCircle({ number, state }: { number: number; state: 'active' | 'comp
     }
 
     return (
-        <div className="w-8 h-8 rounded-full bg-accent-blue/15 border border-accent-blue/40 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-semibold text-accent-blue">{number}</span>
+        <div className="w-10 h-10 rounded-full bg-flow-blue/12 border border-flow-blue/35 flex items-center justify-center flex-shrink-0">
+            <span className="text-sm font-semibold text-flow-blue">{number}</span>
         </div>
     );
 }
@@ -42,6 +42,20 @@ export function Sidebar() {
     const step1State = state.currentStep === 1 ? 'active' : (state.selectedAgent ? 'completed' : 'active');
     const step2State = state.selectedAgent ? (state.currentStep === 2 ? 'active' : 'completed') : 'locked';
 
+    const step1Active = state.currentStep === 1;
+    const step2Active = state.currentStep === 2;
+    const step2Locked = !state.selectedAgent;
+
+    const stepCardBase = 'w-full text-left rounded-2xl border px-4 py-4 transition-all duration-200';
+    const step1Classes = step1Active
+        ? 'bg-bg-panel border-flow-blue/35 shadow-[0_10px_24px_rgba(30,78,160,0.10)]'
+        : 'bg-bg-panel/75 border-border/70 hover:border-flow-blue/25 hover:bg-bg-panel';
+    const step2Classes = step2Locked
+        ? 'bg-bg-primary/70 border-border/60 opacity-75 cursor-not-allowed'
+        : step2Active
+            ? 'bg-bg-panel border-flow-blue/35 shadow-[0_10px_24px_rgba(30,78,160,0.10)] cursor-pointer'
+            : 'bg-bg-panel/75 border-border/70 hover:border-flow-blue/25 hover:bg-bg-panel cursor-pointer';
+
     const handleSignOut = async () => {
         const supabase = createClient();
         await supabase.auth.signOut();
@@ -50,9 +64,9 @@ export function Sidebar() {
     };
 
     return (
-        <aside className="w-[260px] h-full flex flex-col bg-bg-secondary/30">
+        <aside className="w-[292px] h-full flex flex-col border-r border-border/70 bg-gradient-to-b from-bg-secondary/70 via-bg-primary to-bg-primary">
             {/* Logo */}
-            <div className="px-7 py-8">
+            <div className="px-7 py-8 border-b border-border/60">
                 <button
                     className="group text-left cursor-pointer"
                     onClick={() => {
@@ -70,31 +84,28 @@ export function Sidebar() {
             </div>
 
             {/* Step Indicator */}
-            <div className="flex-1 px-5">
-                <p className="text-[10px] uppercase tracking-[0.15em] text-text-secondary mb-5 px-2 font-medium">
-                    Getting Started
+            <div className="flex-1 px-5 pt-6">
+                <p className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/90 mb-2 px-2 font-semibold">
+                    Quick Setup
+                </p>
+                <p className="text-xs text-text-secondary leading-relaxed px-2 mb-5">
+                    Follow two simple steps to build and test your assistant.
                 </p>
 
-                <div className="space-y-0">
+                <div>
                     {/* Step 1 */}
                     <button
                         onClick={() => actions.goToStep(1)}
-                        className={`w-full text-left px-3 py-3 rounded-lg transition-all duration-200 cursor-pointer ${
-                            state.currentStep === 1
-                                ? 'bg-bg-panel/80'
-                                : 'hover:bg-bg-panel/40'
-                        }`}
+                        className={`${stepCardBase} ${step1Classes} cursor-pointer`}
                     >
                         <div className="flex items-center gap-3">
                             <StepCircle number={1} state={step1State} />
                             <div className="min-w-0">
-                                <p className={`text-sm font-medium ${
-                                    state.currentStep === 1 ? 'text-text-primary' : 'text-text-secondary'
-                                }`}>
-                                    Choose Your Agent
+                                <p className={`text-sm font-semibold ${step1Active ? 'text-text-primary' : 'text-text-primary/90'}`}>
+                                    Choose Your Assistant
                                 </p>
-                                <p className="text-[11px] text-text-secondary mt-0.5 truncate">
-                                    Select a template or build custom
+                                <p className="text-[11px] text-text-secondary mt-0.5">
+                                    Pick a template or create your own
                                 </p>
                             </div>
                         </div>
@@ -102,11 +113,14 @@ export function Sidebar() {
                             <motion.div
                                 initial={{ opacity: 0, height: 0 }}
                                 animate={{ opacity: 1, height: 'auto' }}
-                                className="ml-11 mt-2"
+                                className="ml-12 mt-3"
                             >
-                                <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-md bg-accent-blue/10 border border-accent-blue/20">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-                                    <span className="text-xs text-accent-blue font-medium truncate">
+                                <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-flow-blue/10 border border-flow-blue/20">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-accent-green" />
+                                    <span className="text-[10px] uppercase tracking-[0.12em] text-text-secondary/90 font-semibold">
+                                        Selected
+                                    </span>
+                                    <span className="text-xs text-flow-blue font-medium truncate">
                                         {state.selectedAgent.name}
                                     </span>
                                 </div>
@@ -115,92 +129,80 @@ export function Sidebar() {
                     </button>
 
                     {/* Connecting Line */}
-                    <div className="ml-[27px] w-px h-4 bg-border/40" />
+                    <div
+                        className={`ml-5 w-px h-4 ${state.selectedAgent ? 'bg-flow-blue/30' : 'bg-border/80'}`}
+                    />
 
                     {/* Step 2 */}
-                    <div className="relative group/step2">
                     <button
                         onClick={() => actions.goToStep(2)}
                         disabled={!state.selectedAgent}
-                        className={`w-full text-left px-3 py-3 rounded-lg transition-all duration-200 ${
-                            !state.selectedAgent
-                                ? 'opacity-50 cursor-not-allowed'
-                                : state.currentStep === 2
-                                    ? 'bg-bg-panel/80 cursor-pointer'
-                                    : 'hover:bg-bg-panel/40 cursor-pointer'
-                        }`}
+                        className={`${stepCardBase} ${step2Classes}`}
                     >
                         <div className="flex items-center gap-3">
                             <StepCircle number={2} state={step2State} />
                             <div className="min-w-0">
-                                <p className={`text-sm font-medium ${
-                                    state.currentStep === 2 ? 'text-text-primary' : 'text-text-secondary'
-                                }`}>
-                                    Test Your Agent
+                                <p className={`text-sm font-semibold ${step2Active ? 'text-text-primary' : 'text-text-primary/90'}`}>
+                                    Test Your Assistant
                                 </p>
-                                <p className="text-[11px] text-text-secondary mt-0.5">
-                                    Observe scenarios or role-play
+                                <p className="text-[11px] text-text-secondary mt-0.5 leading-relaxed">
+                                    Practice with sample scenarios before going live
                                 </p>
                             </div>
                         </div>
+                        {!state.selectedAgent && (
+                            <p className="ml-12 mt-2 text-[11px] text-text-secondary">
+                                Complete step 1 to unlock testing.
+                            </p>
+                        )}
                     </button>
 
                     {/* Sub-tabs for Step 2 */}
-                    {state.currentStep === 2 && state.selectedAgent && (
+                    {step2Active && state.selectedAgent && (
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
-                            className="ml-11 mt-1 space-y-0.5"
+                            className="ml-12 mt-2 rounded-xl border border-border/70 bg-bg-primary/80 p-1.5 space-y-1"
                         >
                             <button
                                 onClick={() => actions.setTestMode('observe')}
-                                className={`w-full text-left px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer ${
+                                className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
                                     state.testMode === 'observe'
-                                        ? 'text-accent-blue bg-accent-blue/10 font-medium'
-                                        : 'text-text-secondary hover:text-text-primary'
+                                        ? 'text-flow-blue bg-bg-panel border border-flow-blue/25 font-semibold'
+                                        : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary/60 border border-transparent'
                                 }`}
                             >
                                 <span className="flex items-center gap-2">
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    Observe
+                                    <span>Observe</span>
                                 </span>
                             </button>
                             <button
                                 onClick={() => actions.setTestMode('play')}
-                                className={`w-full text-left px-3 py-1.5 rounded-md text-xs transition-all cursor-pointer ${
+                                className={`w-full text-left px-3 py-2 rounded-lg text-xs transition-all cursor-pointer ${
                                     state.testMode === 'play'
-                                        ? 'text-accent-blue bg-accent-blue/10 font-medium'
-                                        : 'text-text-secondary hover:text-text-primary'
+                                        ? 'text-flow-blue bg-bg-panel border border-flow-blue/25 font-semibold'
+                                        : 'text-text-secondary hover:text-text-primary hover:bg-bg-secondary/60 border border-transparent'
                                 }`}
                             >
                                 <span className="flex items-center gap-2">
-                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                                     </svg>
-                                    Play
+                                    <span>Role-play</span>
                                 </span>
                             </button>
                         </motion.div>
                     )}
-                    {!state.selectedAgent && (
-                        <div className="invisible group-hover/step2:visible absolute left-full top-1/2 -translate-y-1/2 ml-2 z-50">
-                            <div className="bg-bg-panel border border-border/60 shadow-lg rounded-lg px-3 py-2 whitespace-nowrap">
-                                <p className="text-[11px] text-text-secondary font-medium">
-                                    Do step 1 first — choose your agent
-                                </p>
-                            </div>
-                        </div>
-                    )}
-                    </div>
                 </div>
             </div>
 
             {/* Sign out */}
-            <div className="px-4 pb-6 mt-auto">
-                <div className="px-4 py-4 rounded-sm bg-bg-primary/50 border border-border/50">
+            <div className="px-4 pb-6 pt-4 mt-auto border-t border-border/60">
+                <div className="px-4 py-4 rounded-xl bg-bg-panel/75 border border-border/70">
                     {user && (
                         <p className="text-[10px] text-text-secondary truncate mb-3 tracking-wide">{user.email}</p>
                     )}

@@ -23,7 +23,7 @@ export default function BuilderPage() {
     if (error) {
         return (
             <div className="flex items-center justify-center h-full">
-                <p className="text-sm text-text-secondary">Agent not found.</p>
+                <p className="text-sm text-text-secondary">Assistant not found.</p>
             </div>
         );
     }
