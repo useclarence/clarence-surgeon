@@ -1,18 +1,65 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import Vapi from '@vapi-ai/web';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOnboardingFlowContext } from '@/hooks/useOnboardingFlow';
 
 type CallState = 'idle' | 'ringing' | 'connected' | 'ended';
 
+const ASSISTANT_ID = 'f28ad15f-ff54-439a-84ac-98bc7507ebec';
+
 export function PlayView() {
     const [callState, setCallState] = useState<CallState>('idle');
+    const [isSpeaking, setIsSpeaking] = useState(false);
     const [elapsed, setElapsed] = useState(0);
     const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const vapiRef = useRef<Vapi | null>(null);
     const { state } = useOnboardingFlowContext();
     const agent = state.selectedAgent;
 
+    // Lazy-init Vapi once
+    const getVapi = useCallback(() => {
+        if (!vapiRef.current) {
+            vapiRef.current = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY!);
+        }
+        return vapiRef.current;
+    }, []);
+
+    // Wire up Vapi event listeners + cleanup on unmount
+    useEffect(() => {
+        const vapi = getVapi();
+
+        const onCallStart = () => setCallState('connected');
+        const onCallEnd = () => {
+            setCallState('ended');
+            setIsSpeaking(false);
+        };
+        const onSpeechStart = () => setIsSpeaking(true);
+        const onSpeechEnd = () => setIsSpeaking(false);
+        const onError = (error: unknown) => {
+            console.error('[Vapi] error:', error);
+            setCallState('ended');
+            setIsSpeaking(false);
+        };
+
+        vapi.on('call-start', onCallStart);
+        vapi.on('call-end', onCallEnd);
+        vapi.on('speech-start', onSpeechStart);
+        vapi.on('speech-end', onSpeechEnd);
+        vapi.on('error', onError);
+
+        return () => {
+            vapi.removeListener('call-start', onCallStart);
+            vapi.removeListener('call-end', onCallEnd);
+            vapi.removeListener('speech-start', onSpeechStart);
+            vapi.removeListener('speech-end', onSpeechEnd);
+            vapi.removeListener('error', onError);
+            vapi.stop();
+        };
+    }, [getVapi]);
+
+    // Timer for connected state
     useEffect(() => {
         if (callState === 'connected') {
             timerRef.current = setInterval(() => setElapsed((e) => e + 1), 1000);
@@ -27,11 +74,11 @@ export function PlayView() {
 
     const handleDial = () => {
         setCallState('ringing');
-        setTimeout(() => setCallState('connected'), 2000);
+        getVapi().start(ASSISTANT_ID);
     };
 
     const handleEndCall = () => {
-        setCallState('ended');
+        getVapi().stop();
     };
 
     const handleCallAgain = () => {
@@ -65,10 +112,10 @@ export function PlayView() {
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
                             </svg>
                         </div>
-                        
+
                         <h2 className="text-3xl font-serif text-text-primary mb-3 italic tracking-tight">{agent.name}</h2>
                         <span className="text-[10px] uppercase tracking-[0.3em] text-accent-blue font-bold opacity-50 mb-8 block">Test Call Mode</span>
-                        
+
                         <p className="text-sm text-text-secondary leading-[1.8] max-w-md mx-auto mb-12">
                             Pretend to be a patient and see how the assistant triages the case using the rules you configured.
                         </p>
@@ -93,7 +140,7 @@ export function PlayView() {
                     >
                         <div className="relative mb-12">
                             <motion.div
-                                animate={{ 
+                                animate={{
                                     scale: [1, 1.2, 1],
                                     opacity: [0.1, 0.3, 0.1]
                                 }}
@@ -103,7 +150,7 @@ export function PlayView() {
                             <div className="w-24 h-24 rounded-full border border-accent-blue/30 flex items-center justify-center relative bg-bg-primary">
                                 <div className="flex gap-1">
                                     {[0, 1, 2].map((i) => (
-                                        <motion.div 
+                                        <motion.div
                                             key={i}
                                             animate={{ height: [8, 20, 8] }}
                                             transition={{ duration: 0.8, repeat: Infinity, delay: i * 0.15 }}
@@ -142,14 +189,27 @@ export function PlayView() {
 
                         {/* Monitor Area */}
                         <div className="grid grid-cols-3 gap-12 min-h-[400px]">
-                            {/* Left: Transcript */}
-                            <div className="col-span-2 bg-bg-secondary/40 border border-border/20 rounded-sm p-10 flex flex-col justify-center text-center relative overflow-hidden">
+                            {/* Left: Live Indicator */}
+                            <div className="col-span-2 bg-bg-secondary/40 border border-border/20 rounded-sm p-10 flex flex-col items-center justify-center text-center relative overflow-hidden">
                                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-accent-blue/20 to-transparent" />
-                                <svg className="w-12 h-12 text-accent-blue opacity-10 mx-auto mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
-                                </svg>
-                                <p className="text-sm font-serif italic text-text-secondary">Preparing your test call...</p>
-                                <p className="text-[10px] uppercase tracking-widest text-text-secondary opacity-40 mt-4">Transcript will appear here during the call</p>
+
+                                {/* Audio visualizer bars */}
+                                <div className="flex items-center gap-1 mb-8">
+                                    {[0, 1, 2, 3, 4].map((i) => (
+                                        <motion.div
+                                            key={i}
+                                            animate={isSpeaking
+                                                ? { height: [8, 28, 12, 24, 8], opacity: [0.4, 1, 0.6, 1, 0.4] }
+                                                : { height: 8, opacity: 0.2 }
+                                            }
+                                            transition={isSpeaking
+                                                ? { duration: 0.8, repeat: Infinity, delay: i * 0.1 }
+                                                : { duration: 0.3 }
+                                            }
+                                            className="w-1 rounded-full bg-accent-blue"
+                                        />
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Right: Test Call Details */}
@@ -184,7 +244,7 @@ export function PlayView() {
                         className="w-full max-w-2xl bg-bg-panel p-16 shadow-[0_20px_80px_rgba(0,0,0,0.04)] border border-border/40 relative overflow-hidden"
                     >
                         <div className="absolute top-0 left-0 w-full h-1.5 bg-accent-blue/10" />
-                        
+
                         <div className="text-center mb-16">
                             <span className="text-[10px] uppercase tracking-[0.4em] text-accent-blue font-bold opacity-40 mb-4 block">Test Call Report</span>
                             <h2 className="text-3xl font-serif text-text-primary italic tracking-tight">Test Summary</h2>
