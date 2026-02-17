@@ -38,10 +38,33 @@ export function AgentList({ agents, onArchive, onDelete }: AgentListProps) {
     return (
         <div>
             {/* Search + Tabs */}
-            <div className="flex items-center gap-4 mb-6">
-                <div className="relative flex-1 max-w-sm">
+            <div className="flex items-center justify-between mb-12 border-b border-border/30 pb-4">
+                <div className="flex items-center gap-10">
+                    {tabs.map((t) => (
+                        <button
+                            key={t.key}
+                            onClick={() => setTab(t.key)}
+                            className={`relative px-1 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition-all cursor-pointer ${
+                                tab === t.key
+                                    ? 'text-accent-blue'
+                                    : 'text-text-secondary hover:text-text-primary opacity-60 hover:opacity-100'
+                            }`}
+                        >
+                            {t.label}
+                            {tab === t.key && (
+                                <motion.div
+                                    layoutId="tab-underline"
+                                    className="absolute -bottom-[17px] left-0 right-0 h-0.5 bg-accent-blue"
+                                />
+                            )}
+                            <span className="ml-2 opacity-40 text-[9px]">{t.count}</span>
+                        </button>
+                    ))}
+                </div>
+
+                <div className="relative group">
                     <svg
-                        className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-secondary"
+                        className="absolute left-0 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-secondary opacity-40 group-focus-within:text-accent-blue transition-colors"
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -55,41 +78,26 @@ export function AgentList({ agents, onArchive, onDelete }: AgentListProps) {
                     </svg>
                     <input
                         type="text"
-                        placeholder="Search (Name, Specialty)"
+                        placeholder="Search protocols..."
                         value={search}
                         onChange={(e) => setSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 rounded-lg border border-border bg-bg-secondary/50 text-sm text-text-primary placeholder:text-text-secondary/50 focus:outline-none focus:border-accent-blue/50"
+                        className="w-64 pl-6 pr-4 py-2 bg-transparent text-xs font-medium text-text-primary placeholder:text-text-secondary/30 placeholder:uppercase placeholder:tracking-widest focus:outline-none focus:border-b-2 border-transparent focus:border-accent-blue/40 transition-all"
                     />
                 </div>
             </div>
 
-            {/* Tabs */}
-            <div className="flex items-center gap-1 border-b border-border mb-6">
-                {tabs.map((t) => (
-                    <button
-                        key={t.key}
-                        onClick={() => setTab(t.key)}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer ${
-                            tab === t.key
-                                ? 'border-accent-blue text-accent-blue'
-                                : 'border-transparent text-text-secondary hover:text-text-primary'
-                        }`}
-                    >
-                        {t.label}
-                        <span className="ml-1.5 text-xs opacity-60">{t.count}</span>
-                    </button>
-                ))}
-            </div>
-
             {/* Grid */}
             {filtered.length === 0 ? (
-                <div className="text-center py-16">
-                    <p className="text-text-secondary text-sm">
-                        {search ? 'No agents match your search.' : 'No agents yet. Create your first one.'}
+                <div className="flex flex-col items-center justify-center py-32 opacity-20">
+                    <svg className="w-12 h-12 mb-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={0.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+                    </svg>
+                    <p className="text-sm font-serif italic">
+                        {search ? 'Search parameters yielded no clinical records.' : 'No protocol records available in the current archive.'}
                     </p>
                 </div>
             ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 animate-in fade-in slide-in-from-bottom-4 duration-1000">
                     {filtered.map((agent) => (
                         <AgentCard key={agent.id} agent={agent} onArchive={onArchive} onDelete={onDelete} />
                     ))}

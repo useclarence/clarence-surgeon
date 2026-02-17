@@ -13,16 +13,15 @@ interface PolicyBlockViewProps {
 
 export function PolicyBlockView({ title, icon, block, accentClass, newItemIds }: PolicyBlockViewProps) {
     return (
-        <div className="mb-5">
-            <div className="flex items-center gap-2 mb-2">
-                <span className={accentClass}>{icon}</span>
-                <h3 className={`text-xs font-semibold uppercase tracking-wide ${accentClass}`}>{title}</h3>
-                <span className="text-[10px] text-text-secondary/40 ml-auto">{block.items.length}</span>
+        <div className="mb-2">
+            <div className="flex items-baseline gap-3 mb-4">
+                <h3 className={`text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 ${accentClass}`}>{title}</h3>
+                <div className="h-px flex-1 bg-border/30" />
             </div>
             {block.items.length === 0 ? (
-                <p className="text-xs text-text-secondary/30 italic pl-5">No items yet</p>
+                <p className="text-[11px] text-text-secondary/40 italic font-serif">No criteria defined.</p>
             ) : (
-                <ul className="space-y-1.5 pl-5">
+                <ul className="space-y-4">
                     <AnimatePresence initial={false}>
                         {block.items.map((item) => {
                             const isNew = newItemIds?.has(item.id);
@@ -30,25 +29,19 @@ export function PolicyBlockView({ title, icon, block, accentClass, newItemIds }:
                                 <motion.li
                                     key={item.id}
                                     layout
-                                    initial={{ opacity: 0, x: -8, height: 0 }}
+                                    initial={{ opacity: 0, x: -4 }}
                                     animate={{
                                         opacity: 1,
                                         x: 0,
-                                        height: 'auto',
-                                        backgroundColor: isNew
-                                            ? ['rgba(139,92,246,0.15)', 'rgba(139,92,246,0)']
-                                            : 'rgba(0,0,0,0)',
+                                        borderLeftColor: isNew ? 'var(--color-accent-blue)' : 'transparent',
                                     }}
-                                    exit={{ opacity: 0, x: -8, height: 0 }}
-                                    transition={{
-                                        duration: 0.25,
-                                        backgroundColor: isNew
-                                            ? { duration: 2, ease: 'easeOut' }
-                                            : { duration: 0 },
-                                    }}
-                                    className="text-xs text-text-secondary leading-relaxed rounded px-1.5 -mx-1.5"
+                                    exit={{ opacity: 0, scale: 0.95 }}
+                                    transition={{ duration: 0.4 }}
+                                    className={`text-[13px] text-text-primary leading-relaxed pl-4 border-l-2 border-transparent transition-colors duration-1000 ${
+                                        isNew ? 'border-accent-blue/40 bg-accent-blue/5 py-1' : ''
+                                    }`}
                                 >
-                                    <span className="text-text-primary">{item.description}</span>
+                                    <span className="opacity-90">{item.description}</span>
                                 </motion.li>
                             );
                         })}

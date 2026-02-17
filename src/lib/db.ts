@@ -1,6 +1,6 @@
 import { prisma } from './prisma';
 import type { Agent } from './types';
-import type { Agent as PrismaAgent } from '@prisma/client';
+import type { Agent as PrismaAgent, Prisma } from '@prisma/client';
 
 // ── Mappers ──
 
@@ -36,7 +36,7 @@ export async function getAgent(id: string, userId: string): Promise<Agent | null
 }
 
 export async function createAgent(
-    data: { name: string; specialty?: string },
+    data: { name: string; specialty?: string; policy?: Agent['policy']; onboardingComplete?: boolean },
     userId: string
 ): Promise<Agent> {
     const row = await prisma.agent.create({
@@ -44,6 +44,8 @@ export async function createAgent(
             userId,
             name: data.name,
             specialty: data.specialty ?? null,
+            ...(data.policy !== undefined && { policy: data.policy as unknown as Prisma.InputJsonValue }),
+            ...(data.onboardingComplete !== undefined && { onboardingComplete: data.onboardingComplete }),
         },
     });
     return toAgent(row);

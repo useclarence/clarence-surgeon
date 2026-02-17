@@ -29,48 +29,48 @@ export function CreateAgentModal({ open, onClose, onCreate }: CreateAgentModalPr
 
     return (
         <Modal open={open} onClose={onClose}>
-            <form onSubmit={handleSubmit} className="rounded-xl border border-border bg-bg-panel p-6">
-                <h2 className="text-lg font-semibold text-text-primary mb-1">Create New Agent</h2>
-                <p className="text-xs text-text-secondary mb-6">
-                    Define an agent to formalize a surgical decision protocol.
+            <form onSubmit={handleSubmit} className="bg-bg-panel p-10 max-w-lg w-full rounded-sm shadow-2xl border border-border/40">
+                <h2 className="text-2xl font-serif text-text-primary mb-2 italic">Create Your Triage Assistant</h2>
+                <p className="text-sm text-text-secondary mb-10 leading-relaxed max-w-md">
+                    Step 1 of 2: Name your assistant and choose a specialty. Next, you&apos;ll run sample patient calls to test it.
                 </p>
 
-                <div className="space-y-4">
-                    <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                            Agent Name <span className="text-accent-red">*</span>
+                <div className="space-y-10">
+                    <div className="relative group">
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-2 opacity-50">
+                            Assistant Name <span className="text-accent-red opacity-100">*</span>
                         </label>
                         <input
                             type="text"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            placeholder="e.g. Shoulder Injury Triage"
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-bg-secondary/50 text-sm text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent-blue/50"
+                            placeholder="e.g. Spine Referral Triage Assistant"
+                            className="w-full px-0 py-3 bg-transparent border-b border-border/60 text-base text-text-primary placeholder:text-text-secondary/20 focus:outline-none focus:border-accent-blue transition-all"
                             autoFocus
                         />
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-text-secondary mb-1.5">
-                            Specialty <span className="text-text-secondary/40">(optional)</span>
+                        <label className="block text-[10px] font-bold uppercase tracking-widest text-text-secondary mb-4 opacity-50">
+                            Specialty (Optional)
                         </label>
                         <input
                             type="text"
                             value={specialty}
                             onChange={(e) => setSpecialty(e.target.value)}
-                            placeholder="e.g. Orthopedics"
-                            className="w-full px-3 py-2 rounded-lg border border-border bg-bg-secondary/50 text-sm text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent-blue/50 mb-2"
+                            placeholder="e.g. Orthopedics, Neurosurgery"
+                            className="w-full px-0 py-3 bg-transparent border-b border-border/60 text-base text-text-primary placeholder:text-text-secondary/20 focus:outline-none focus:border-accent-blue mb-6 transition-all"
                         />
-                        <div className="flex flex-wrap gap-1.5">
+                        <div className="flex flex-wrap gap-2">
                             {SPECIALTY_PRESETS.map((s) => (
                                 <button
                                     key={s}
                                     type="button"
                                     onClick={() => setSpecialty(s)}
-                                    className={`text-[11px] px-2 py-0.5 rounded-full border transition-colors cursor-pointer ${
+                                    className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
                                         specialty === s
-                                            ? 'border-accent-blue/50 bg-accent-blue/10 text-accent-blue'
-                                            : 'border-border text-text-secondary hover:border-accent-blue/30 hover:text-text-primary'
+                                            ? 'border-accent-blue bg-accent-blue text-white'
+                                            : 'border-border/60 text-text-secondary hover:border-accent-blue/40 hover:text-text-primary'
                                     }`}
                                 >
                                     {s}
@@ -80,20 +80,20 @@ export function CreateAgentModal({ open, onClose, onCreate }: CreateAgentModalPr
                     </div>
                 </div>
 
-                <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-border">
+                <div className="flex items-center justify-end gap-8 mt-16 pt-8 border-t border-border/30">
                     <button
                         type="button"
                         onClick={onClose}
-                        className="px-4 py-2 text-sm text-text-secondary hover:text-text-primary transition-colors cursor-pointer"
+                        className="text-[10px] font-bold uppercase tracking-widest text-text-secondary hover:text-text-primary transition-all cursor-pointer"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
                         disabled={!name.trim()}
-                        className="px-4 py-2 rounded-lg text-sm font-medium bg-accent-blue/10 border border-accent-blue/30 text-accent-blue hover:bg-accent-blue/20 transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+                        className="px-8 py-3 rounded-sm text-[10px] font-bold uppercase tracking-widest bg-accent-blue text-white hover:bg-accent-blue/90 transition-all shadow-sm disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        Create Agent
+                        Continue to Testing
                     </button>
                 </div>
             </form>
