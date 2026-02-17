@@ -115,7 +115,7 @@ export function TemplateCard({ template, onSelect, onView, isCreating }: Templat
                         disabled={isCreating || !isAvailable}
                         className="text-xs font-medium text-accent-blue bg-accent-blue/10 hover:bg-accent-blue/20 px-3.5 py-1.5 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        {isCreating ? 'Creating...' : 'Select'}
+                        {isCreating ? 'Creating...' : 'Choose'}
                     </button>
                 </div>
             </div>

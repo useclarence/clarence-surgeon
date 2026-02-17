@@ -6,7 +6,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useOnboardingFlowContext } from '@/hooks/useOnboardingFlow';
 import { motion } from 'framer-motion';
 
-function StepCircle({ number, state }: { number: number; state: 'active' | 'completed' | 'locked' }) {
+function StepCircle({ number, state }: { number: number; state: 'active' | 'inactive' | 'completed' | 'locked' }) {
     if (state === 'completed') {
         return (
             <div className="w-10 h-10 rounded-full bg-accent-green/15 border border-accent-green/35 flex items-center justify-center flex-shrink-0">
@@ -27,6 +27,14 @@ function StepCircle({ number, state }: { number: number; state: 'active' | 'comp
         );
     }
 
+    if (state === 'inactive') {
+        return (
+            <div className="w-10 h-10 rounded-full bg-bg-secondary/70 border border-border/60 flex items-center justify-center flex-shrink-0">
+                <span className="text-sm font-semibold text-text-secondary">{number}</span>
+            </div>
+        );
+    }
+
     return (
         <div className="w-10 h-10 rounded-full bg-flow-blue/12 border border-flow-blue/35 flex items-center justify-center flex-shrink-0">
             <span className="text-sm font-semibold text-flow-blue">{number}</span>
@@ -39,7 +47,7 @@ export function Sidebar() {
     const { user } = useAuth();
     const { state, actions } = useOnboardingFlowContext();
 
-    const step1State = state.currentStep === 1 ? 'active' : (state.selectedAgent ? 'completed' : 'active');
+    const step1State = state.currentStep === 1 ? 'active' : 'inactive';
     const step2State = state.selectedAgent ? (state.currentStep === 2 ? 'active' : 'completed') : 'locked';
 
     const step1Active = state.currentStep === 1;
@@ -85,9 +93,14 @@ export function Sidebar() {
 
             {/* Step Indicator */}
             <div className="flex-1 px-5 pt-6">
-                <p className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/90 mb-2 px-2 font-semibold">
-                    Quick Setup
-                </p>
+                <div className="mb-2 px-2 flex items-center justify-between">
+                    <p className="text-[10px] uppercase tracking-[0.16em] text-text-secondary/90 font-semibold">
+                        Quick Setup
+                    </p>
+                    <span className="text-[10px] text-text-secondary/80 font-medium">
+                        2 minutes
+                    </span>
+                </div>
                 <p className="text-xs text-text-secondary leading-relaxed px-2 mb-5">
                     Follow two simple steps to build and test your assistant.
                 </p>
@@ -177,7 +190,7 @@ export function Sidebar() {
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                     </svg>
-                                    <span>Observe</span>
+                                    <span>Pre-recorded calls</span>
                                 </span>
                             </button>
                             <button
@@ -192,7 +205,7 @@ export function Sidebar() {
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
                                     </svg>
-                                    <span>Role-play</span>
+                                    <span>Live-call</span>
                                 </span>
                             </button>
                         </motion.div>

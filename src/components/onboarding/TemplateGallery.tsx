@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { AGENT_TEMPLATES, TEMPLATE_CATEGORIES, type AgentTemplate, type TemplateCategory } from '@/lib/templates';
 import { TemplateCard } from './TemplateCard';
@@ -215,6 +215,12 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
         : AGENT_TEMPLATES.filter((t) => t.category === activeCategory)
     ).sort((a, b) => (b.available ? 1 : 0) - (a.available ? 1 : 0));
 
+    useEffect(() => {
+        if (state.templateCreationError) {
+            setShowTemplates(true);
+        }
+    }, [state.templateCreationError]);
+
     if (showTemplates) {
         return (
             <div className="h-full flex flex-col">
@@ -247,6 +253,11 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
                             <span className="text-[10px] uppercase tracking-[0.16em] font-semibold text-flow-blue">Step 1</span>
                             <span className="text-xs text-text-secondary">Choose your assistant template.</span>
                         </div>
+                        {state.templateCreationError && (
+                            <div className="mt-4 rounded-lg border border-accent-red/25 bg-accent-red/10 px-3 py-2">
+                                <p className="text-xs text-accent-red">{state.templateCreationError}</p>
+                            </div>
+                        )}
                     </motion.div>
 
                     {/* Category Filter */}

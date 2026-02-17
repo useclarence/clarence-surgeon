@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useReducer, useCallback } from 'react';
+import { createContext, useContext, useReducer, useCallback, useRef } from 'react';
 import type { Agent } from '@/lib/types';
 import { AGENT_TEMPLATES } from '@/lib/templates';
 
@@ -11,13 +11,17 @@ export interface OnboardingFlowState {
     selectedAgent: Agent | null;
     testMode: 'observe' | 'play';
     isCreatingFromTemplate: boolean;
+    templateCreationError: string | null;
 }
 
 type FlowAction =
     | { type: 'SELECT_AGENT'; agent: Agent }
+    | { type: 'REPLACE_SELECTED_AGENT'; agent: Agent }
+    | { type: 'CLEAR_SELECTED_AGENT' }
     | { type: 'GO_TO_STEP'; step: 1 | 2 }
     | { type: 'SET_TEST_MODE'; mode: 'observe' | 'play' }
     | { type: 'SET_CREATING'; creating: boolean }
+    | { type: 'SET_TEMPLATE_ERROR'; error: string | null }
     | { type: 'RESET' };
 
 const initialState: OnboardingFlowState = {
@@ -25,12 +29,17 @@ const initialState: OnboardingFlowState = {
     selectedAgent: null,
     testMode: 'observe',
     isCreatingFromTemplate: false,
+    templateCreationError: null,
 };
 
 function flowReducer(state: OnboardingFlowState, action: FlowAction): OnboardingFlowState {
     switch (action.type) {
         case 'SELECT_AGENT':
-            return { ...state, selectedAgent: action.agent, currentStep: 2, isCreatingFromTemplate: false };
+            return { ...state, selectedAgent: action.agent, currentStep: 2, isCreatingFromTemplate: false, templateCreationError: null };
+        case 'REPLACE_SELECTED_AGENT':
+            return { ...state, selectedAgent: action.agent };
+        case 'CLEAR_SELECTED_AGENT':
+            return { ...state, selectedAgent: null, currentStep: 1, isCreatingFromTemplate: false };
         case 'GO_TO_STEP':
             if (action.step === 2 && !state.selectedAgent) return state;
             return { ...state, currentStep: action.step };
@@ -38,6 +47,8 @@ function flowReducer(state: OnboardingFlowState, action: FlowAction): Onboarding
             return { ...state, testMode: action.mode };
         case 'SET_CREATING':
             return { ...state, isCreatingFromTemplate: action.creating };
+        case 'SET_TEMPLATE_ERROR':
+            return { ...state, templateCreationError: action.error };
         case 'RESET':
             return initialState;
         default:
@@ -57,11 +68,29 @@ export interface OnboardingFlowActions {
 
 export function useOnboardingFlow() {
     const [state, dispatch] = useReducer(flowReducer, initialState);
+    const templateCreateRequestRef = useRef(0);
 
     const selectTemplate = useCallback(async (templateId: string) => {
         const template = AGENT_TEMPLATES.find((t) => t.id === templateId);
         if (!template) return;
 
+        const requestId = templateCreateRequestRef.current + 1;
+        templateCreateRequestRef.current = requestId;
+        const now = Date.now();
+        const optimisticAgent: Agent = {
+            id: `temp-${template.id}-${now}`,
+            name: template.name,
+            specialty: template.specialty,
+            createdAt: now,
+            updatedAt: now,
+            status: 'active',
+            policy: template.policy,
+            conversationHistory: [],
+            onboardingComplete: true,
+        };
+
+        dispatch({ type: 'SET_TEMPLATE_ERROR', error: null });
+        dispatch({ type: 'SELECT_AGENT', agent: optimisticAgent });
         dispatch({ type: 'SET_CREATING', creating: true });
 
         try {
@@ -79,9 +108,16 @@ export function useOnboardingFlow() {
             if (!res.ok) throw new Error('Failed to create assistant from template');
 
             const agent: Agent = await res.json();
-            dispatch({ type: 'SELECT_AGENT', agent });
-        } catch {
+            if (templateCreateRequestRef.current !== requestId) return;
+
+            dispatch({ type: 'REPLACE_SELECTED_AGENT', agent });
             dispatch({ type: 'SET_CREATING', creating: false });
+        } catch {
+            if (templateCreateRequestRef.current !== requestId) return;
+
+            dispatch({ type: 'SET_CREATING', creating: false });
+            dispatch({ type: 'SET_TEMPLATE_ERROR', error: 'Could not create that assistant. Please try selecting a template again.' });
+            dispatch({ type: 'CLEAR_SELECTED_AGENT' });
         }
     }, []);
 
@@ -98,6 +134,7 @@ export function useOnboardingFlow() {
     }, []);
 
     const reset = useCallback(() => {
+        templateCreateRequestRef.current += 1;
         dispatch({ type: 'RESET' });
     }, []);
 

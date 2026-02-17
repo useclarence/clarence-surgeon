@@ -1,18 +1,25 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useOnboardingFlowContext } from '@/hooks/useOnboardingFlow';
+import { Modal } from '@/components/ui/Modal';
 import { ObserveView } from './ObserveView';
 import { PlayView } from './PlayView';
 
 export function TestView() {
     const { state, actions } = useOnboardingFlowContext();
     const agent = state.selectedAgent;
+    const [confirmModifyOpen, setConfirmModifyOpen] = useState(false);
 
     if (!agent) return null;
 
     const handleModify = () => {
-        window.alert("You'll be redirected to Step 1 to choose another assistant template.");
+        setConfirmModifyOpen(true);
+    };
+
+    const handleAcceptModify = () => {
+        setConfirmModifyOpen(false);
         actions.goToStep(1);
     };
 
@@ -49,6 +56,12 @@ export function TestView() {
                             Modify
                         </button>
                     </div>
+                    {state.isCreatingFromTemplate && (
+                        <div className="ml-14 mt-3 inline-flex items-center gap-2 rounded-lg border border-flow-blue/20 bg-flow-blue/10 px-3 py-1.5">
+                            <span className="h-1.5 w-1.5 rounded-full bg-flow-blue animate-pulse" />
+                            <span className="text-[11px] text-text-secondary">Finalizing assistant setup...</span>
+                        </div>
+                    )}
                     <p className="text-sm text-text-secondary mt-4 ml-14 max-w-2xl leading-relaxed">
                         Run pre-recorded calls or live calls to see triage decisions, routing recommendations, and clinical rationale.
                     </p>
@@ -64,7 +77,7 @@ export function TestView() {
                                 : 'text-text-secondary hover:text-text-primary opacity-60 hover:opacity-100'
                         }`}
                     >
-                        Observe
+                        Pre-recorded calls
                         {state.testMode === 'observe' && (
                             <motion.div
                                 layoutId="test-tab-underline"
@@ -80,7 +93,7 @@ export function TestView() {
                                 : 'text-text-secondary hover:text-text-primary opacity-60 hover:opacity-100'
                         }`}
                     >
-                        Role-play
+                        Live-call
                         {state.testMode === 'play' && (
                             <motion.div
                                 layoutId="test-tab-underline"
@@ -97,6 +110,31 @@ export function TestView() {
                     {state.testMode === 'observe' ? <ObserveView /> : <PlayView />}
                 </div>
             </div>
+
+            <Modal open={confirmModifyOpen} onClose={() => setConfirmModifyOpen(false)}>
+                <div className="bg-bg-panel border border-border/45 rounded-2xl shadow-2xl overflow-hidden">
+                    <div className="px-6 py-5 border-b border-border/45 bg-bg-primary/55">
+                        <h2 className="text-base font-semibold text-text-primary">Modify assistant template</h2>
+                        <p className="text-sm text-text-secondary mt-1">
+                            You will be redirected to Step 1 to choose another assistant template.
+                        </p>
+                    </div>
+                    <div className="px-6 py-4 flex items-center justify-end gap-2">
+                        <button
+                            onClick={() => setConfirmModifyOpen(false)}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-border/55 bg-bg-primary/45 text-text-secondary hover:text-text-primary hover:bg-bg-primary/70 transition-all cursor-pointer"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleAcceptModify}
+                            className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-accent-blue/40 bg-accent-blue/15 text-accent-blue hover:bg-accent-blue/25 transition-all cursor-pointer"
+                        >
+                            Accept
+                        </button>
+                    </div>
+                </div>
+            </Modal>
         </div>
     );
 }
