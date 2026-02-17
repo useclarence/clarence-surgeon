@@ -167,7 +167,7 @@ export function useBuilder(agent: Agent) {
                     conversationHistory: stateRef.current.messages,
                     onboardingComplete: stateRef.current.onboardingStep === 'complete',
                 }),
-            }).catch((err) => console.error('Failed to persist agent:', err));
+            }).catch((err) => console.error('Failed to persist assistant:', err));
         }, 1500);
 
         return () => {

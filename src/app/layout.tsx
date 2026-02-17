@@ -7,13 +7,13 @@ const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
     title: 'SurgeonLogic — Formalize Clinical Decision-Making with AI',
-    description: 'Voice-powered AI agent that helps surgeons formalize and challenge their clinical decision logic.',
+    description: 'Voice-powered AI assistant that helps surgeons formalize and challenge their clinical decision logic.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className="dark">
-            <body className={`${inter.className} antialiased min-h-screen bg-bg-primary text-text-primary`}>
+        <html lang="en">
+            <body className={`${inter.className} antialiased min-h-screen`}>
                 <AuthProvider>{children}</AuthProvider>
             </body>
         </html>

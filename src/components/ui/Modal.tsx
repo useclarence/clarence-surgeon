@@ -7,9 +7,10 @@ interface ModalProps {
     open: boolean;
     onClose: () => void;
     children: React.ReactNode;
+    containerClassName?: string;
 }
 
-export function Modal({ open, onClose, children }: ModalProps) {
+export function Modal({ open, onClose, children, containerClassName }: ModalProps) {
     useEffect(() => {
         if (!open) return;
         const handleKey = (e: KeyboardEvent) => {
@@ -31,7 +32,7 @@ export function Modal({ open, onClose, children }: ModalProps) {
                 >
                     <div className="absolute inset-0 bg-black/60" onClick={onClose} />
                     <motion.div
-                        className="relative z-10 w-full max-w-md mx-4"
+                        className={`relative z-10 w-full mx-4 ${containerClassName ?? 'max-w-md'}`}
                         initial={{ opacity: 0, scale: 0.95, y: 10 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: 10 }}

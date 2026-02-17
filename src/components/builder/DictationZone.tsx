@@ -40,30 +40,31 @@ export function DictationZone({
     }, [isRecording, onStartRecording, onStopRecording]);
 
     return (
-        <div className="border-t border-border bg-bg-secondary/50 px-6 py-4">
-            {/* Interim text */}
+        <div className="bg-bg-primary/95 backdrop-blur-md px-12 py-10 max-w-4xl mx-auto w-full">
+            {/* Interim text — Architectural Floating Layer */}
             {interimText && (
-                <div className="mb-3 px-3 py-2 rounded-lg bg-bg-panel/50 text-sm text-text-secondary italic">
+                <div className="mb-6 px-6 py-4 rounded-sm bg-bg-panel shadow-[0_4px_20px_rgba(0,0,0,0.04)] border border-border/40 text-sm text-text-primary italic animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <span className="text-accent-blue opacity-40 mr-3 not-italic font-bold uppercase tracking-widest text-[10px]">Transcribing</span>
                     {interimText}
-                    <span className="inline-block w-0.5 h-4 bg-accent-blue/60 ml-0.5 align-text-bottom animate-pulse" />
+                    <span className="inline-block w-1 h-4 bg-accent-blue/40 ml-1.5 align-text-bottom animate-pulse" />
                 </div>
             )}
 
-            <div className="flex items-center gap-3">
-                {/* Mic button */}
+            <div className="flex items-center gap-10">
+                {/* Mic button — Precise Clinical Instrument */}
                 <button
                     onClick={handleMicClick}
                     disabled={isProcessing}
-                    className={`relative flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center transition-all cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed ${
+                    className={`relative flex-shrink-0 w-16 h-16 rounded-full flex items-center justify-center transition-all duration-500 cursor-pointer disabled:opacity-20 disabled:cursor-not-allowed group shadow-sm ${
                         isRecording
-                            ? 'bg-accent-red/10 border-2 border-accent-red text-accent-red'
-                            : 'bg-accent-blue/10 border-2 border-accent-blue/30 text-accent-blue hover:border-accent-blue/50'
+                            ? 'bg-accent-red text-white'
+                            : 'bg-accent-blue text-white hover:scale-105'
                     }`}
                 >
                     {isRecording && (
-                        <span className="absolute inset-0 rounded-full bg-accent-red/20 pulse-ring" />
+                        <span className="absolute -inset-3 rounded-full border-2 border-accent-red/20 pulse-ring" />
                     )}
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className={`w-6 h-6 transition-transform duration-500 ${isRecording ? 'scale-110' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                         {isRecording ? (
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 7.5A2.25 2.25 0 017.5 5.25h9a2.25 2.25 0 012.25 2.25v9a2.25 2.25 0 01-2.25 2.25h-9a2.25 2.25 0 01-2.25-2.25v-9z" />
                         ) : (
@@ -72,31 +73,32 @@ export function DictationZone({
                     </svg>
                 </button>
 
-                {/* Text input */}
-                <form onSubmit={handleSubmitText} className="flex-1 flex items-center gap-2">
-                    <input
-                        type="text"
-                        value={textInput}
-                        onChange={(e) => setTextInput(e.target.value)}
-                        placeholder={isRecording ? 'Recording...' : 'Or type your clinical logic here...'}
-                        disabled={isRecording || isProcessing}
-                        className="flex-1 px-4 py-2.5 rounded-lg border border-border bg-bg-primary text-sm text-text-primary placeholder:text-text-secondary/40 focus:outline-none focus:border-accent-blue/50 disabled:opacity-40"
-                    />
-                    <button
-                        type="submit"
-                        disabled={!textInput.trim() || isRecording || isProcessing}
-                        className="px-4 py-2.5 rounded-lg text-sm font-medium bg-accent-blue/10 border border-accent-blue/30 text-accent-blue hover:bg-accent-blue/20 transition-colors disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
-                    >
-                        Send
-                    </button>
+                {/* Text input — Ghost Input */}
+                <form onSubmit={handleSubmitText} className="flex-1 flex flex-col gap-2">
+                    <div className="relative group">
+                        <input
+                            type="text"
+                            value={textInput}
+                            onChange={(e) => setTextInput(e.target.value)}
+                            placeholder={isRecording ? 'Listening to clinical logic...' : 'State your medical reasoning or clinical criteria...'}
+                            disabled={isRecording || isProcessing}
+                            className="w-full px-0 py-4 bg-transparent border-b-2 border-border/60 text-lg text-text-primary placeholder:text-text-secondary/30 focus:outline-none focus:border-accent-blue transition-all disabled:opacity-30"
+                        />
+                        <button
+                            type="submit"
+                            disabled={!textInput.trim() || isRecording || isProcessing}
+                            className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-[0.2em] text-accent-blue opacity-0 group-focus-within:opacity-100 hover:opacity-70 transition-all disabled:hidden cursor-pointer"
+                        >
+                            Commit Logic
+                        </button>
+                    </div>
+                    {!isRecording && !textInput.trim() && (
+                        <p className="text-[10px] uppercase tracking-widest text-text-secondary opacity-40 font-semibold mt-1">
+                            Voice Command Preferred
+                        </p>
+                    )}
                 </form>
             </div>
-
-            {isRecording && (
-                <p className="mt-2 text-xs text-accent-red text-center">
-                    Recording... Click the mic button to stop and send.
-                </p>
-            )}
         </div>
     );
 }

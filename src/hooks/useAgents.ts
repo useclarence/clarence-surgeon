@@ -11,7 +11,7 @@ export function useAgents() {
         fetch('/api/agents')
             .then((res) => res.json())
             .then((data: Agent[]) => setAgents(data))
-            .catch((err) => console.error('Failed to load agents:', err))
+            .catch((err) => console.error('Failed to load assistants:', err))
             .finally(() => setLoading(false));
     }, []);
 
