@@ -6,7 +6,7 @@ import { AGENT_TEMPLATES, TEMPLATE_CATEGORIES, type AgentTemplate, type Template
 import { TemplateCard } from './TemplateCard';
 import { useOnboardingFlowContext } from '@/hooks/useOnboardingFlow';
 import { Modal } from '@/components/ui/Modal';
-import type { Agent } from '@/lib/types';
+import type { Agent, CategoryType } from '@/lib/types';
 
 interface TemplateGalleryProps {
     onBuildCustom: () => void;
@@ -206,35 +206,54 @@ function UnderConstructionCard({ agent, onView }: { agent: Agent; onView: (agent
             animate={{ opacity: 1, y: 0 }}
             className="group relative bg-bg-secondary/25 border border-accent-amber/30 rounded-xl p-5 transition-all duration-300"
         >
-            <div className="flex items-start gap-3 mb-3">
-                <div className="w-9 h-9 rounded-lg bg-accent-amber/10 border border-accent-amber/20 flex items-center justify-center flex-shrink-0">
-                    <svg className="w-4 h-4 text-accent-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" />
-                    </svg>
+            <div className="mb-3 flex items-start justify-between gap-3">
+                <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-accent-amber/10 border border-accent-amber/20 flex items-center justify-center flex-shrink-0">
+                        <svg className="w-4 h-4 text-accent-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" />
+                        </svg>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-text-primary truncate">{agent.name}</h3>
+                        {agent.specialty && (
+                            <span className="inline-block text-[10px] font-medium text-accent-amber/80 bg-accent-amber/8 px-2 py-0.5 rounded mt-1">
+                                {agent.specialty}
+                            </span>
+                        )}
+                    </div>
                 </div>
-                <div className="min-w-0 flex-1">
-                    <h3 className="text-sm font-semibold text-text-primary truncate">{agent.name}</h3>
-                    {agent.specialty && (
-                        <span className="inline-block text-[10px] font-medium text-accent-amber/80 bg-accent-amber/8 px-2 py-0.5 rounded mt-1">
-                            {agent.specialty}
-                        </span>
-                    )}
-                </div>
-            </div>
-
-            <div className="flex items-center justify-between mt-4">
-                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] font-bold text-accent-amber bg-accent-amber/10 border border-accent-amber/25 px-2.5 py-1 rounded-full">
-                    <span className="w-1.5 h-1.5 rounded-full bg-accent-amber animate-pulse" />
-                    Under Construction
-                </span>
                 {agent.policy && (
                     <button
                         onClick={() => onView(agent)}
-                        className="text-xs font-medium text-text-secondary border border-border/50 bg-bg-primary/45 hover:bg-bg-primary/65 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                        className="text-xs font-medium text-text-secondary border border-border/50 bg-bg-primary/45 hover:bg-bg-primary/65 px-3 py-1.5 rounded-lg transition-all cursor-pointer shrink-0"
                     >
                         View Policy
                     </button>
                 )}
+            </div>
+
+            <div className="mt-4">
+                <div className="min-w-0">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] font-bold text-accent-amber bg-accent-amber/10 border border-accent-amber/25 px-2.5 py-1 rounded-full">
+                        <span className="w-1.5 h-1.5 rounded-full bg-accent-amber animate-pulse" />
+                        Under Construction
+                    </span>
+                    <p className="mt-2 text-[12px] font-medium text-accent-amber/90">
+                        Check back tomorrow as our team is working on it.
+                    </p>
+                    <div className="mt-2 max-w-[28rem] rounded-lg border border-border/45 px-2.5 py-1.5">
+                        <p className="flex items-start gap-2 text-[11px] leading-relaxed text-text-secondary">
+                            <span className="mt-0.5 inline-flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full border border-flow-blue/30 text-[10px] font-semibold text-flow-blue">i</span>
+                            <span>
+                                Want to test calls now? Pick one from the template library using{' '}
+                                <span className="inline-flex items-center rounded-md border border-flow-blue/32 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-flow-blue">
+                                    Use a Template
+                                </span>{' '}
+                                below.
+                            </span>
+                        </p>
+                    </div>
+                </div>
             </div>
         </motion.div>
     );
@@ -242,13 +261,12 @@ function UnderConstructionCard({ agent, onView }: { agent: Agent; onView: (agent
 
 function BuildingAgentDetails({ agent }: { agent: Agent }) {
     if (!agent.policy) return null;
-    const { blocks, rules } = agent.policy;
-    const blockEntries = [
-        { key: 'highPotentialPatients', label: 'High Potential Patients' },
-        { key: 'lowPotentialPatients', label: 'Low Potential Patients' },
-        { key: 'inBetween', label: 'In-Between' },
-        { key: 'forNonQualified', label: 'Non-Qualified Patients' },
-    ] as const;
+    const rules = Array.isArray(agent.policy.rules) ? agent.policy.rules : [];
+    const categoryEntries: Array<{ key: CategoryType; label: string }> = [
+        { key: 'see_urgently', label: 'See Urgently' },
+        { key: 'see', label: 'See' },
+        { key: 'cancel', label: 'Cancel & Redirect' },
+    ];
 
     return (
         <div className="space-y-5">
@@ -262,16 +280,16 @@ function BuildingAgentDetails({ agent }: { agent: Agent }) {
                 </p>
             </section>
 
-            {blockEntries.map(({ key, label }) => {
-                const block = blocks[key];
-                if (!block.items.length) return null;
+            {categoryEntries.map(({ key, label }) => {
+                const categoryRules = rules.filter((rule) => rule.categoryType === key);
+                if (!categoryRules.length) return null;
                 return (
                     <section key={key}>
                         <h3 className="text-sm font-semibold text-text-primary">{label}</h3>
                         <ul className="mt-2 space-y-1.5">
-                            {block.items.map((item) => (
-                                <li key={item.id} className="rounded-lg border border-border/45 bg-bg-primary/40 px-3 py-2 text-xs leading-relaxed text-text-secondary">
-                                    {item.description}
+                            {categoryRules.map((rule) => (
+                                <li key={rule.id} className="rounded-lg border border-border/45 bg-bg-primary/40 px-3 py-2 text-xs leading-relaxed text-text-secondary">
+                                    {rule.description}
                                 </li>
                             ))}
                         </ul>
@@ -279,18 +297,12 @@ function BuildingAgentDetails({ agent }: { agent: Agent }) {
                 );
             })}
 
-            {rules.length > 0 && (
+            {rules.length === 0 && (
                 <section>
                     <h3 className="text-sm font-semibold text-text-primary">Decision Rules</h3>
-                    <ul className="mt-2 space-y-2">
-                        {rules.map((rule) => (
-                            <li key={rule.id} className="rounded-lg border border-border/45 bg-bg-primary/40 px-3 py-2 text-xs leading-relaxed text-text-secondary">
-                                <span className="text-text-primary font-medium">{rule.condition}</span>
-                                {' -> '}
-                                {rule.outcome}
-                            </li>
-                        ))}
-                    </ul>
+                    <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                        No rules have been saved yet.
+                    </p>
                 </section>
             )}
         </div>
