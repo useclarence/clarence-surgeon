@@ -129,7 +129,8 @@ export async function POST(req: Request) {
                         } else if (raw.nextQuestion) {
                             rawQuestions.push(raw.nextQuestion as ClarificationQuestion);
                         }
-                        parsed.nextQuestions = rawQuestions.map((nq) => ({
+                        // Enforce single-question flow even if the model returns multiple.
+                        parsed.nextQuestions = rawQuestions.slice(0, 1).map((nq) => ({
                             ...nq,
                             id: nq.id ?? crypto.randomUUID(),
                             answered: false,
