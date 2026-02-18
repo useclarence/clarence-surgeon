@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface ScenarioStep {
@@ -130,6 +130,77 @@ const SCENARIOS: Scenario[] = [
     },
 ];
 
+// WeakMap ensures we never call createMediaElementSource twice on the same element
+const sourceMap = new WeakMap<HTMLAudioElement, { ctx: AudioContext; analyser: AnalyserNode }>();
+
+function getOrCreateAnalyser(audio: HTMLAudioElement) {
+    const existing = sourceMap.get(audio);
+    if (existing) return existing;
+
+    const ctx = new AudioContext();
+    const source = ctx.createMediaElementSource(audio);
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 128;
+    analyser.smoothingTimeConstant = 0.7;
+    source.connect(analyser);
+    analyser.connect(ctx.destination);
+
+    const entry = { ctx, analyser };
+    sourceMap.set(audio, entry);
+    return entry;
+}
+
+function useAudioAnalyser(audioElement: HTMLAudioElement | null, isPlaying: boolean, barCount: number) {
+    const rafRef = useRef<number>(0);
+    const [levels, setLevels] = useState<number[]>(() => Array(barCount).fill(0) as number[]);
+
+    useEffect(() => {
+        if (!audioElement || !isPlaying) {
+            cancelAnimationFrame(rafRef.current);
+            setLevels(Array(barCount).fill(0) as number[]);
+            return;
+        }
+
+        const { ctx, analyser } = getOrCreateAnalyser(audioElement);
+
+        if (ctx.state === 'suspended') {
+            void ctx.resume();
+        }
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        // Per-bar variation offsets so each bar wiggles slightly differently
+        const offsets = Array.from({ length: barCount }, (_, i) => 0.12 * (i - Math.floor(barCount / 2)));
+
+        const tick = () => {
+            analyser.getByteFrequencyData(dataArray);
+            // Compute overall RMS volume from all bins
+            let sumSq = 0;
+            for (let j = 0; j < dataArray.length; j++) {
+                const v = (dataArray[j] ?? 0) / 255;
+                sumSq += v * v;
+            }
+            const rms = Math.sqrt(sumSq / dataArray.length);
+            // Boost so speech-level audio fills more of the range
+            const volume = Math.min(1, rms * 2.5);
+
+            const next: number[] = [];
+            for (let i = 0; i < barCount; i++) {
+                // Add per-bar variation based on time for a wave-like effect
+                const wave = Math.sin(Date.now() / 180 + offsets[i]! * 8) * 0.15;
+                next.push(Math.max(0, Math.min(1, volume + wave * volume)));
+            }
+
+            setLevels(next);
+            rafRef.current = requestAnimationFrame(tick);
+        };
+
+        rafRef.current = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(rafRef.current);
+    }, [audioElement, isPlaying, barCount]);
+
+    return levels;
+}
+
 const TRIAGE_LABELS: Record<Scenario['triageResult'], { label: string; color: string; routeNote: string }> = {
     high_surgical_potential: {
         label: 'High Surgical Potential',
@@ -237,205 +308,253 @@ export function ObserveView() {
 
     return (
         <div className="space-y-4">
-            {SCENARIOS.map((scenario, scenarioIndex) => {
-                const isExpanded = expandedId === scenario.id;
-                const isPlaying = activePlaybackId === scenario.id;
-                const triage = TRIAGE_LABELS[scenario.triageResult];
-                const currentTime = currentTimeById[scenario.id] ?? 0;
-                const duration = durationById[scenario.id] ?? scenario.durationHintSec;
-                const sliderMax = duration > 0 ? duration : scenario.durationHintSec;
+            {SCENARIOS.map((scenario, scenarioIndex) => (
+                <ScenarioCard
+                    key={scenario.id}
+                    scenario={scenario}
+                    index={scenarioIndex}
+                    isExpanded={expandedId === scenario.id}
+                    isPlaying={activePlaybackId === scenario.id}
+                    currentTime={currentTimeById[scenario.id] ?? 0}
+                    duration={durationById[scenario.id] ?? scenario.durationHintSec}
+                    audioError={audioErrorById[scenario.id]}
+                    onExpand={() => handleExpand(scenario.id)}
+                    onPlay={() => { void playScenario(scenario); }}
+                    onPause={() => pauseScenario(scenario)}
+                    onRestart={() => { void restartScenario(scenario); }}
+                    onSeek={(value) => seekScenario(scenario, value)}
+                    onAudioRef={(node) => { audioRefs.current[scenario.id] = node; }}
+                    onLoadedMetadata={(d) => setDurationById((prev) => ({ ...prev, [scenario.id]: d }))}
+                    onTimeUpdate={(t) => setCurrentTimeById((prev) => ({ ...prev, [scenario.id]: t }))}
+                    onPlayEvent={() => setActivePlaybackId(scenario.id)}
+                    onPauseEvent={() => setActivePlaybackId((c) => (c === scenario.id ? null : c))}
+                    onEndedEvent={() => setActivePlaybackId((c) => (c === scenario.id ? null : c))}
+                    onErrorEvent={() => setAudioErrorById((prev) => ({ ...prev, [scenario.id]: getAudioMissingMessage(scenario) }))}
+                />
+            ))}
+        </div>
+    );
+}
 
-                return (
-                    <div key={scenario.id} className="border border-border/40 rounded-xl overflow-hidden bg-bg-secondary/20">
-                        {/* Scenario Header */}
-                        <button
-                            onClick={() => handleExpand(scenario.id)}
-                            className="w-full text-left px-5 py-4 flex items-center justify-between hover:bg-bg-secondary/40 transition-colors cursor-pointer"
-                        >
-                            <div className="flex items-center gap-4">
-                                <div className="w-9 h-9 rounded-full bg-bg-panel flex items-center justify-center text-sm font-medium text-text-secondary">
-                                    {scenarioIndex + 1}
-                                </div>
-                                <div>
-                                    <p className="text-sm font-medium text-text-primary">
-                                        {scenario.displayLabel ?? `${scenario.patientName}, ${scenario.age}`}
-                                    </p>
-                                    <p className="text-xs text-text-secondary mt-0.5">{scenario.chiefComplaint}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                                {isPlaying && (
-                                    <span
-                                        className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent-blue/30 bg-accent-blue/10"
-                                        title="Playing"
-                                        aria-label="Playing"
-                                    >
-                                        <span className="h-2 w-2 rounded-full bg-accent-blue animate-pulse" />
-                                    </span>
-                                )}
-                                <div className="flex flex-col items-end">
-                                    <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full border ${triage.color}`}>
-                                        {triage.label}
-                                    </span>
-                                    <p className="mt-1 text-[10px] leading-tight text-text-secondary text-right max-w-[220px]">
-                                        {triage.routeNote}
-                                    </p>
-                                </div>
-                                <svg
-                                    className={`w-4 h-4 text-text-secondary transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                                    fill="none"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    strokeWidth={2}
-                                >
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                                </svg>
-                            </div>
-                        </button>
+interface ScenarioCardProps {
+    scenario: Scenario;
+    index: number;
+    isExpanded: boolean;
+    isPlaying: boolean;
+    currentTime: number;
+    duration: number;
+    audioError: string | undefined;
+    onExpand: () => void;
+    onPlay: () => void;
+    onPause: () => void;
+    onRestart: () => void;
+    onSeek: (value: number) => void;
+    onAudioRef: (node: HTMLAudioElement | null) => void;
+    onLoadedMetadata: (duration: number) => void;
+    onTimeUpdate: (time: number) => void;
+    onPlayEvent: () => void;
+    onPauseEvent: () => void;
+    onEndedEvent: () => void;
+    onErrorEvent: () => void;
+}
 
-                        {/* Expanded Conversation */}
-                        <AnimatePresence>
-                            {isExpanded && (
-                                <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: 'auto', opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="px-5 py-5 border-t border-border/30">
-                                        <audio
-                                            ref={(node) => {
-                                                audioRefs.current[scenario.id] = node;
-                                            }}
-                                            src={scenario.audioSrc}
-                                            preload="metadata"
-                                            className="hidden"
-                                            onLoadedMetadata={(event) => {
-                                                const loadedDuration = event.currentTarget.duration;
-                                                if (Number.isFinite(loadedDuration) && loadedDuration > 0) {
-                                                    setDurationById((prev) => ({ ...prev, [scenario.id]: loadedDuration }));
-                                                }
-                                            }}
-                                            onTimeUpdate={(event) => {
-                                                const nextTime = event.currentTarget.currentTime;
-                                                setCurrentTimeById((prev) => ({ ...prev, [scenario.id]: nextTime }));
-                                            }}
-                                            onPlay={() => setActivePlaybackId(scenario.id)}
-                                            onPause={() => {
-                                                setActivePlaybackId((current) => (current === scenario.id ? null : current));
-                                            }}
-                                            onEnded={() => {
-                                                setActivePlaybackId((current) => (current === scenario.id ? null : current));
-                                            }}
-                                            onError={() => {
-                                                setAudioErrorById((prev) => ({ ...prev, [scenario.id]: getAudioMissingMessage(scenario) }));
-                                            }}
-                                        />
+function ScenarioCard({
+    scenario,
+    index,
+    isExpanded,
+    isPlaying,
+    currentTime,
+    duration,
+    audioError,
+    onExpand,
+    onPlay,
+    onPause,
+    onRestart,
+    onSeek,
+    onAudioRef,
+    onLoadedMetadata,
+    onTimeUpdate,
+    onPlayEvent,
+    onPauseEvent,
+    onEndedEvent,
+    onErrorEvent,
+}: ScenarioCardProps) {
+    const triage = TRIAGE_LABELS[scenario.triageResult];
+    const sliderMax = duration > 0 ? duration : scenario.durationHintSec;
+    const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
+    const levels = useAudioAnalyser(audioEl, isPlaying, 5);
 
-                                        <div className="rounded-2xl border border-border/35 bg-bg-primary/65 px-5 py-5">
-                                            <div className="flex items-center justify-center gap-3">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        void playScenario(scenario);
-                                                    }}
-                                                    aria-label="Play"
-                                                    title="Play"
-                                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent-blue/40 bg-accent-blue/12 text-accent-blue hover:bg-accent-blue/22 transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
-                                                    disabled={isPlaying}
-                                                >
-                                                    <svg className="h-4 w-4 translate-x-[1px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                        <path d="M7.5 5.5v13l10-6.5-10-6.5z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => pauseScenario(scenario)}
-                                                    aria-label="Pause"
-                                                    title="Pause"
-                                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/55 bg-bg-panel/70 text-text-primary hover:border-border/75 transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
-                                                    disabled={!isPlaying}
-                                                >
-                                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                                                        <path d="M7.5 5.5h3v13h-3zM13.5 5.5h3v13h-3z" />
-                                                    </svg>
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => {
-                                                        void restartScenario(scenario);
-                                                    }}
-                                                    aria-label="Restart"
-                                                    title="Restart"
-                                                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/55 bg-bg-panel/70 text-text-primary hover:border-border/75 transition-colors cursor-pointer"
-                                                >
-                                                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                        <path d="M20 11a8 8 0 10-2.34 5.66M20 4v7h-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                                    </svg>
-                                                </button>
-                                            </div>
+    const setAudioRef = useCallback((node: HTMLAudioElement | null) => {
+        setAudioEl(node);
+        onAudioRef(node);
+    }, [onAudioRef]);
 
-                                            <div className="mt-5">
-                                                <input
-                                                    type="range"
-                                                    min={0}
-                                                    max={sliderMax}
-                                                    step={0.1}
-                                                    value={Math.min(currentTime, sliderMax)}
-                                                    onChange={(event) => seekScenario(scenario, Number(event.currentTarget.value))}
-                                                    aria-label="Audio progress"
-                                                    className="w-full accent-[#4d78b8] cursor-pointer"
-                                                />
-                                            </div>
-
-                                            <div className="mt-4 flex justify-center" aria-hidden="true">
-                                                <div className="inline-flex items-end gap-1 rounded-md border border-white/10 bg-[#0f1319] px-3 py-2 shadow-inner">
-                                                    {Array.from({ length: 9 }).map((_, index) => {
-                                                        const amplitude = 3 + ((index * 7) % 5);
-
-                                                        return (
-                                                            <motion.span
-                                                                key={`${scenario.id}-meter-dot-${index}`}
-                                                                className="h-1.5 w-1.5 rounded-full bg-white/75"
-                                                                animate={isPlaying ? { y: [0, -amplitude, 0], opacity: [0.45, 1, 0.45] } : { y: 0, opacity: 0.45 }}
-                                                                transition={
-                                                                    isPlaying
-                                                                        ? {
-                                                                            duration: 0.55 + (index % 3) * 0.08,
-                                                                            repeat: Infinity,
-                                                                            ease: 'easeInOut',
-                                                                            delay: index * 0.045,
-                                                                        }
-                                                                        : { duration: 0.2 }
-                                                                }
-                                                            />
-                                                        );
-                                                    })}
-                                                </div>
-                                            </div>
-
-                                            {audioErrorById[scenario.id] && (
-                                                <div className="mt-3 flex justify-center">
-                                                    <span
-                                                        className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent-blue/35 bg-accent-blue/10 text-accent-blue"
-                                                        title={audioErrorById[scenario.id]}
-                                                    >
-                                                        <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                                                            <path d="M12 8v5m0 3h.01M10.29 3.86l-8.1 14A1 1 0 003.05 19h17.9a1 1 0 00.86-1.5l-8.1-14a1 1 0 00-1.72 0z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
-                                                        </svg>
-                                                        <span className="sr-only">{audioErrorById[scenario.id]}</span>
-                                                    </span>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+    return (
+        <div className="border border-border/40 rounded-xl overflow-hidden bg-bg-secondary/20">
+            <button
+                onClick={onExpand}
+                className="w-full text-left px-5 py-4 flex items-center justify-between hover:bg-bg-secondary/40 transition-colors cursor-pointer"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="w-9 h-9 rounded-full bg-bg-panel flex items-center justify-center text-sm font-medium text-text-secondary">
+                        {index + 1}
                     </div>
-                );
-            })}
+                    <div>
+                        <p className="text-sm font-medium text-text-primary">
+                            {scenario.displayLabel ?? `${scenario.patientName}, ${scenario.age}`}
+                        </p>
+                        <p className="text-xs text-text-secondary mt-0.5">{scenario.chiefComplaint}</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-3">
+                    {isPlaying && (
+                        <span
+                            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent-blue/30 bg-accent-blue/10"
+                            title="Playing"
+                            aria-label="Playing"
+                        >
+                            <span className="h-2 w-2 rounded-full bg-accent-blue animate-pulse" />
+                        </span>
+                    )}
+                    <div className="flex flex-col items-end">
+                        <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full border ${triage.color}`}>
+                            {triage.label}
+                        </span>
+                        <p className="mt-1 text-[10px] leading-tight text-text-secondary text-right max-w-[220px]">
+                            {triage.routeNote}
+                        </p>
+                    </div>
+                    <svg
+                        className={`w-4 h-4 text-text-secondary transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                    </svg>
+                </div>
+            </button>
+
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="overflow-hidden"
+                    >
+                        <div className="px-5 py-5 border-t border-border/30">
+                            <audio
+                                ref={setAudioRef}
+                                src={scenario.audioSrc}
+                                preload="metadata"
+                                className="hidden"
+                                onLoadedMetadata={(event) => {
+                                    const d = event.currentTarget.duration;
+                                    if (Number.isFinite(d) && d > 0) onLoadedMetadata(d);
+                                }}
+                                onTimeUpdate={(event) => onTimeUpdate(event.currentTarget.currentTime)}
+                                onPlay={onPlayEvent}
+                                onPause={onPauseEvent}
+                                onEnded={onEndedEvent}
+                                onError={onErrorEvent}
+                            />
+
+                            <div className="rounded-2xl border border-border/35 bg-bg-primary/65 px-5 py-5">
+                                <div className="flex items-center justify-center gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={onPlay}
+                                        aria-label="Play"
+                                        title="Play"
+                                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-accent-blue/40 bg-accent-blue/12 text-accent-blue hover:bg-accent-blue/22 transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                                        disabled={isPlaying}
+                                    >
+                                        <svg className="h-4 w-4 translate-x-[1px]" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M7.5 5.5v13l10-6.5-10-6.5z" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={onPause}
+                                        aria-label="Pause"
+                                        title="Pause"
+                                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/55 bg-bg-panel/70 text-text-primary hover:border-border/75 transition-colors cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed"
+                                        disabled={!isPlaying}
+                                    >
+                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                            <path d="M7.5 5.5h3v13h-3zM13.5 5.5h3v13h-3z" />
+                                        </svg>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={onRestart}
+                                        aria-label="Restart"
+                                        title="Restart"
+                                        className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border/55 bg-bg-panel/70 text-text-primary hover:border-border/75 transition-colors cursor-pointer"
+                                    >
+                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                            <path d="M20 11a8 8 0 10-2.34 5.66M20 4v7h-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                        </svg>
+                                    </button>
+                                </div>
+
+                                <div className="mt-5">
+                                    <input
+                                        type="range"
+                                        min={0}
+                                        max={sliderMax}
+                                        step={0.1}
+                                        value={Math.min(currentTime, sliderMax)}
+                                        onChange={(event) => onSeek(Number(event.currentTarget.value))}
+                                        aria-label="Audio progress"
+                                        className="w-full accent-[#4d78b8] cursor-pointer"
+                                    />
+                                </div>
+
+                                <div className="mt-4 flex items-end justify-center h-7" aria-hidden="true">
+                                    <div className="inline-flex items-end gap-[3px]">
+                                        {levels.map((level, i) => {
+                                            const minH = 4;
+                                            const maxH = 28;
+                                            const height = minH + level * (maxH - minH);
+                                            const opacity = isPlaying ? 0.5 + level * 0.5 : 0.3;
+
+                                            return (
+                                                <div
+                                                    key={i}
+                                                    className="w-[3px] rounded-full bg-accent-blue"
+                                                    style={{
+                                                        height: `${height}px`,
+                                                        opacity,
+                                                        transition: 'height 0.08s ease-out, opacity 0.08s ease-out',
+                                                    }}
+                                                />
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {audioError && (
+                                    <div className="mt-3 flex justify-center">
+                                        <span
+                                            className="inline-flex h-6 w-6 items-center justify-center rounded-full border border-accent-blue/35 bg-accent-blue/10 text-accent-blue"
+                                            title={audioError}
+                                        >
+                                            <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                                <path d="M12 8v5m0 3h.01M10.29 3.86l-8.1 14A1 1 0 003.05 19h17.9a1 1 0 00.86-1.5l-8.1-14a1 1 0 00-1.72 0z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                                            </svg>
+                                            <span className="sr-only">{audioError}</span>
+                                        </span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </div>
     );
 }
