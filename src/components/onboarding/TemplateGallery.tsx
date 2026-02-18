@@ -6,6 +6,7 @@ import { AGENT_TEMPLATES, TEMPLATE_CATEGORIES, type AgentTemplate, type Template
 import { TemplateCard } from './TemplateCard';
 import { useOnboardingFlowContext } from '@/hooks/useOnboardingFlow';
 import { Modal } from '@/components/ui/Modal';
+import type { Agent } from '@/lib/types';
 
 interface TemplateGalleryProps {
     onBuildCustom: () => void;
@@ -199,16 +200,124 @@ function GenericTemplateDetails({ template }: { template: AgentTemplate }) {
     );
 }
 
+function UnderConstructionCard({ agent, onView }: { agent: Agent; onView: (agent: Agent) => void }) {
+    return (
+        <motion.div
+            layout
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="group relative bg-bg-secondary/25 border border-accent-amber/30 rounded-xl p-5 transition-all duration-300"
+        >
+            <div className="flex items-start gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-accent-amber/10 border border-accent-amber/20 flex items-center justify-center flex-shrink-0">
+                    <svg className="w-4 h-4 text-accent-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" />
+                    </svg>
+                </div>
+                <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-semibold text-text-primary truncate">{agent.name}</h3>
+                    {agent.specialty && (
+                        <span className="inline-block text-[10px] font-medium text-accent-amber/80 bg-accent-amber/8 px-2 py-0.5 rounded mt-1">
+                            {agent.specialty}
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between mt-4">
+                <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.14em] font-bold text-accent-amber bg-accent-amber/10 border border-accent-amber/25 px-2.5 py-1 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent-amber animate-pulse" />
+                    Under Construction
+                </span>
+                {agent.policy && (
+                    <button
+                        onClick={() => onView(agent)}
+                        className="text-xs font-medium text-text-secondary border border-border/50 bg-bg-primary/45 hover:bg-bg-primary/65 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                    >
+                        View Policy
+                    </button>
+                )}
+            </div>
+        </motion.div>
+    );
+}
+
+function BuildingAgentDetails({ agent }: { agent: Agent }) {
+    if (!agent.policy) return null;
+    const { blocks, rules } = agent.policy;
+    const blockEntries = [
+        { key: 'highPotentialPatients', label: 'High Potential Patients' },
+        { key: 'lowPotentialPatients', label: 'Low Potential Patients' },
+        { key: 'inBetween', label: 'In-Between' },
+        { key: 'forNonQualified', label: 'Non-Qualified Patients' },
+    ] as const;
+
+    return (
+        <div className="space-y-5">
+            <section className="rounded-xl border border-accent-amber/25 bg-accent-amber/8 px-4 py-3">
+                <div className="flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-accent-amber animate-pulse" />
+                    <h3 className="text-sm font-semibold text-text-primary">Under Construction</h3>
+                </div>
+                <p className="mt-2 text-xs leading-relaxed text-text-secondary">
+                    This agent was submitted via the custom builder. Its policy is shown below.
+                </p>
+            </section>
+
+            {blockEntries.map(({ key, label }) => {
+                const block = blocks[key];
+                if (!block.items.length) return null;
+                return (
+                    <section key={key}>
+                        <h3 className="text-sm font-semibold text-text-primary">{label}</h3>
+                        <ul className="mt-2 space-y-1.5">
+                            {block.items.map((item) => (
+                                <li key={item.id} className="rounded-lg border border-border/45 bg-bg-primary/40 px-3 py-2 text-xs leading-relaxed text-text-secondary">
+                                    {item.description}
+                                </li>
+                            ))}
+                        </ul>
+                    </section>
+                );
+            })}
+
+            {rules.length > 0 && (
+                <section>
+                    <h3 className="text-sm font-semibold text-text-primary">Decision Rules</h3>
+                    <ul className="mt-2 space-y-2">
+                        {rules.map((rule) => (
+                            <li key={rule.id} className="rounded-lg border border-border/45 bg-bg-primary/40 px-3 py-2 text-xs leading-relaxed text-text-secondary">
+                                <span className="text-text-primary font-medium">{rule.condition}</span>
+                                {' -> '}
+                                {rule.outcome}
+                            </li>
+                        ))}
+                    </ul>
+                </section>
+            )}
+        </div>
+    );
+}
+
 export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
     const [activeCategory, setActiveCategory] = useState<TemplateCategory>('All');
     const [showTemplates, setShowTemplates] = useState(false);
     const [viewingTemplateId, setViewingTemplateId] = useState<string | null>(null);
+    const [viewingBuildingAgent, setViewingBuildingAgent] = useState<Agent | null>(null);
+    const [buildingAgents, setBuildingAgents] = useState<Agent[]>([]);
     const { state, actions } = useOnboardingFlowContext();
     const prefersReducedMotion = useReducedMotion();
     const headingWords = ['Set up', 'your', 'triage', 'assistant'];
     const viewingTemplate = viewingTemplateId
         ? AGENT_TEMPLATES.find((template) => template.id === viewingTemplateId) ?? null
         : null;
+
+    useEffect(() => {
+        fetch('/api/agents')
+            .then((res) => res.json())
+            .then((agents: Agent[]) => setBuildingAgents(agents.filter((a) => a.status === 'building')))
+            .catch(() => {});
+    }, []);
 
     const filtered = (activeCategory === 'All'
         ? AGENT_TEMPLATES
@@ -280,6 +389,17 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
 
                 {/* Templates Grid */}
                 <div className="flex-1 overflow-auto px-10 pb-10">
+                    {buildingAgents.length > 0 && (
+                        <div className="mb-8">
+                            <h2 className="text-sm font-semibold text-text-primary mb-3">Your Agents</h2>
+                            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                {buildingAgents.map((agent) => (
+                                    <UnderConstructionCard key={agent.id} agent={agent} onView={setViewingBuildingAgent} />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                         <AnimatePresence mode="popLayout">
                             {filtered.map((template) => (
@@ -295,6 +415,7 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
                     </div>
                 </div>
 
+                {/* Template detail modal */}
                 <Modal
                     open={Boolean(viewingTemplate)}
                     onClose={() => setViewingTemplateId(null)}
@@ -325,6 +446,44 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
                                 {viewingTemplate.id === 'shoulder-triage'
                                     ? <ShoulderTemplateDetails />
                                     : <GenericTemplateDetails template={viewingTemplate} />}
+                            </div>
+                        </div>
+                    )}
+                </Modal>
+
+                {/* Building agent policy modal */}
+                <Modal
+                    open={Boolean(viewingBuildingAgent)}
+                    onClose={() => setViewingBuildingAgent(null)}
+                    containerClassName="max-w-4xl"
+                >
+                    {viewingBuildingAgent && (
+                        <div className="bg-bg-panel border border-border/45 rounded-2xl shadow-2xl overflow-hidden">
+                            <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border/45 bg-bg-primary/55">
+                                <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                        <svg className="w-5 h-5 text-accent-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" />
+                                        </svg>
+                                        <h2 className="text-lg font-semibold text-text-primary truncate">
+                                            {viewingBuildingAgent.name}
+                                        </h2>
+                                    </div>
+                                    {viewingBuildingAgent.specialty && (
+                                        <p className="text-xs text-text-secondary mt-1">
+                                            {viewingBuildingAgent.specialty}
+                                        </p>
+                                    )}
+                                </div>
+                                <button
+                                    onClick={() => setViewingBuildingAgent(null)}
+                                    className="text-xs font-medium text-text-secondary hover:text-text-primary border border-border/55 bg-bg-primary/50 hover:bg-bg-primary/75 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                                >
+                                    Close
+                                </button>
+                            </div>
+                            <div className="max-h-[78vh] overflow-y-auto px-6 py-5">
+                                <BuildingAgentDetails agent={viewingBuildingAgent} />
                             </div>
                         </div>
                     )}
@@ -420,6 +579,22 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
                 </p>
             </motion.div>
 
+            {buildingAgents.length > 0 && (
+                <motion.div
+                    initial={{ opacity: 0, y: 12 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 }}
+                    className="mt-8 max-w-3xl w-full"
+                >
+                    <h2 className="text-sm font-semibold text-text-primary mb-3">Your Agents</h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        {buildingAgents.map((agent) => (
+                            <UnderConstructionCard key={agent.id} agent={agent} onView={setViewingBuildingAgent} />
+                        ))}
+                    </div>
+                </motion.div>
+            )}
+
             <motion.div
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -499,6 +674,44 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
                     </div>
                 </button>
             </motion.div>
+
+            {/* Building agent policy modal (landing page) */}
+            <Modal
+                open={Boolean(viewingBuildingAgent)}
+                onClose={() => setViewingBuildingAgent(null)}
+                containerClassName="max-w-4xl"
+            >
+                {viewingBuildingAgent && (
+                    <div className="bg-bg-panel border border-border/45 rounded-2xl shadow-2xl overflow-hidden">
+                        <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-border/45 bg-bg-primary/55">
+                            <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                    <svg className="w-5 h-5 text-accent-amber" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17L17.25 21A2.652 2.652 0 0021 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 11-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 004.486-6.336l-3.276 3.277a3.004 3.004 0 01-2.25-2.25l3.276-3.276a4.5 4.5 0 00-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085" />
+                                    </svg>
+                                    <h2 className="text-lg font-semibold text-text-primary truncate">
+                                        {viewingBuildingAgent.name}
+                                    </h2>
+                                </div>
+                                {viewingBuildingAgent.specialty && (
+                                    <p className="text-xs text-text-secondary mt-1">
+                                        {viewingBuildingAgent.specialty}
+                                    </p>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => setViewingBuildingAgent(null)}
+                                className="text-xs font-medium text-text-secondary hover:text-text-primary border border-border/55 bg-bg-primary/50 hover:bg-bg-primary/75 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
+                            >
+                                Close
+                            </button>
+                        </div>
+                        <div className="max-h-[78vh] overflow-y-auto px-6 py-5">
+                            <BuildingAgentDetails agent={viewingBuildingAgent} />
+                        </div>
+                    </div>
+                )}
+            </Modal>
         </div>
     );
 }

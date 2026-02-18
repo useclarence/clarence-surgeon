@@ -47,7 +47,7 @@ export interface Agent {
     specialty?: string;
     createdAt: number;
     updatedAt: number;
-    status: 'active' | 'archived';
+    status: 'active' | 'archived' | 'building';
     policy: ConsultationPolicy | null;
     conversationHistory: BuilderMessage[];
     onboardingComplete: boolean;
