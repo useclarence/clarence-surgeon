@@ -9,6 +9,8 @@ interface DictationZoneProps {
     onStartRecording: () => void;
     onStopRecording: () => void;
     onSendText: (text: string) => void;
+    canSubmit?: boolean;
+    onSubmit?: () => void;
 }
 
 export function DictationZone({
@@ -18,6 +20,8 @@ export function DictationZone({
     onStartRecording,
     onStopRecording,
     onSendText,
+    canSubmit,
+    onSubmit,
 }: DictationZoneProps) {
     const [textInput, setTextInput] = useState('');
 
@@ -80,7 +84,7 @@ export function DictationZone({
                             type="text"
                             value={textInput}
                             onChange={(e) => setTextInput(e.target.value)}
-                            placeholder={isRecording ? 'Listening to clinical logic...' : 'State your medical reasoning or clinical criteria...'}
+                            placeholder={isRecording ? 'Listening to clinical logic...' : 'Refine your policy or submit it as-is...'}
                             disabled={isRecording || isProcessing}
                             className="w-full px-0 py-4 bg-transparent border-b-2 border-border/60 text-lg text-text-primary placeholder:text-text-secondary/30 focus:outline-none focus:border-accent-blue transition-all disabled:opacity-30"
                         />
@@ -89,16 +93,30 @@ export function DictationZone({
                             disabled={!textInput.trim() || isRecording || isProcessing}
                             className="absolute right-0 top-1/2 -translate-y-1/2 text-[10px] font-bold uppercase tracking-[0.2em] text-accent-blue opacity-0 group-focus-within:opacity-100 hover:opacity-70 transition-all disabled:hidden cursor-pointer"
                         >
-                            Commit Logic
+                            Send
                         </button>
                     </div>
-                    {!isRecording && !textInput.trim() && (
-                        <p className="text-[10px] uppercase tracking-widest text-text-secondary opacity-40 font-semibold mt-1">
-                            Voice Command Preferred
-                        </p>
-                    )}
                 </form>
+
+                {/* Submit policy button */}
+                {canSubmit && (
+                    <button
+                        onClick={onSubmit}
+                        className="flex-shrink-0 flex items-center gap-2.5 px-5 py-3 bg-accent-green text-white text-xs font-semibold uppercase tracking-widest rounded-sm hover:opacity-90 transition-opacity cursor-pointer"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                        </svg>
+                        Submit
+                    </button>
+                )}
             </div>
+
+            {!canSubmit && !isRecording && !textInput.trim() && (
+                <p className="text-[10px] uppercase tracking-widest text-text-secondary opacity-40 font-semibold mt-3 ml-[104px]">
+                    Voice Command Preferred
+                </p>
+            )}
         </div>
     );
 }
