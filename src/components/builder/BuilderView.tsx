@@ -67,14 +67,19 @@ export function BuilderView({ agent }: BuilderViewProps) {
     }, [dispatch, start]);
 
     const handleStopRecording = useCallback(() => {
+        const pendingInterim = interimText;
         stop();
         dispatch({ type: 'STOP_RECORDING' });
-        const fullText = speechBufferRef.current.join(' ');
+        const parts = [...speechBufferRef.current];
+        if (pendingInterim) {
+            parts.push(pendingInterim);
+        }
         speechBufferRef.current = [];
+        const fullText = parts.join(' ');
         if (fullText.trim()) {
             sendMessage(fullText);
         }
-    }, [stop, dispatch, sendMessage]);
+    }, [stop, dispatch, sendMessage, interimText]);
 
     const handleSendText = useCallback(
         (text: string) => {
