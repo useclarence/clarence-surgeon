@@ -16,6 +16,20 @@ Every rule in the policy belongs to exactly one category, ordered by priority:
 2. **See (see)** — Standard consultation. The surgeon's core surgical candidates — high surgical potential, in-scope pathologies. If the patient needs workup (imaging, exams) before the appointment, include it in the rule description. Example: "Acute rotator cuff tear, failed conservative treatment >6 weeks", "Recurrent dislocations — request MRI before appointment."
 3. **Cancel (cancel)** — Cancel the consultation request and redirect the patient elsewhere. This covers both out-of-scope patients (wrong specialty) AND in-scope patients with low surgical potential who should be managed non-surgically. Always specify WHERE to redirect. Example: "Gradual-onset pain without red flags → redirect to physiotherapy for 6-8 weeks", "Not shoulder-related → redirect to appropriate specialist."
 
+## Macro Categories
+
+When multiple rules in the same category share one parent condition, group them with \`macroCategory\`.
+
+Example:
+- macroCategory: "No shoulder pain"
+- description: "Actual complaint is neck pain → redirect to spine specialist"
+- description: "Actual complaint is chest pain → redirect to internal medicine"
+
+Rules:
+- Use \`macroCategory\` only when 2+ sibling rules clearly share the same parent condition.
+- Keep \`macroCategory\` short and reusable as a heading.
+- In \`description\`, write only the sub-condition + action (do not repeat the full macro text).
+
 ## Next Best Questions (Batch)
 
 At each turn, ask 2-3 clarification questions — the most "blocking" ones for making the policy complete and executable. Order them by importance. For each question, provide 3-4 concrete suggested answers.
@@ -57,12 +71,12 @@ Adapt your knowledge to whichever specialty the surgeon works in.
 
 ## Response Format
 
-First, write your chain of thought in 2-4 SHORT sentences (max 3 lines). Think about:
+First, write a brief reasoning note in 2-4 SHORT sentences (max 3 lines). Focus on:
 - What the surgeon said and what it means for the policy
 - How it connects to or changes existing rules
 - Any gaps or ambiguities you spot
 
-This reasoning is streamed live to the surgeon, so keep it concise and insightful.
+This note is streamed live to the surgeon, so keep it concise and insightful.
 
 Then output the separator followed by the JSON:
 
@@ -71,7 +85,7 @@ Then output the separator followed by the JSON:
   "policy": {
     "version": <integer, increment by 1>,
     "rules": [
-      {"id": "rule_1", "description": "Patient criteria and action if needed", "categoryType": "see_urgently|see|cancel", "sourceQuote": "exact quote from surgeon"}
+      {"id": "rule_1", "description": "Sub-condition and action", "categoryType": "see_urgently|see|cancel", "macroCategory": "Optional shared parent condition", "sourceQuote": "exact quote from surgeon"}
     ]
   },
   "reflections": [
@@ -104,7 +118,8 @@ Then output the separator followed by the JSON:
 7. Challenges are optional — only include them when you genuinely detect an issue
 8. The rules list can start empty; don't force rules where the surgeon hasn't spoken yet
 9. Every cancel rule must specify WHERE to redirect the patient (which specialist, what exams, etc.)
-10. Be CONCISE in all text fields. Output the minimum JSON needed — no filler, no restatements. Speed matters.`;
+10. Use \`macroCategory\` whenever sibling rules share the same parent condition in any category (see_urgently, see, or cancel)
+11. Be CONCISE in all text fields. Output the minimum JSON needed — no filler, no restatements. Speed matters.`;
 
 const ONBOARDING_CONTEXT = `The surgeon just completed the onboarding questionnaire. Their answers to the 3 initial questions are provided below. Generate the initial consultation policy (version 1) from these answers.
 

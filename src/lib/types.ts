@@ -7,6 +7,7 @@ export interface PolicyRule {
     description: string;
     categoryType: CategoryType;
     sourceQuote?: string;
+    macroCategory?: string;
 }
 
 export interface ConsultationPolicy {

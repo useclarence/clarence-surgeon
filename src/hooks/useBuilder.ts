@@ -11,6 +11,14 @@ import type {
     V2AnalysisResponse,
 } from '@/lib/types';
 
+function getErrorStatus(error: unknown): number | null {
+    if (typeof error === 'object' && error !== null && 'status' in error) {
+        const status = (error as { status?: unknown }).status;
+        if (typeof status === 'number') return status;
+    }
+    return null;
+}
+
 // ── Onboarding Questions ──
 
 const ONBOARDING_QUESTIONS = [
@@ -241,7 +249,19 @@ export function useBuilder(agent: Agent) {
                     }),
                 });
 
-                if (!res.ok) throw new Error(`API error: ${res.status}`);
+                if (!res.ok) {
+                    let errorMessage = `API error: ${res.status}`;
+                    try {
+                        const errorJson = (await res.json()) as { error?: string };
+                        if (errorJson.error) {
+                            errorMessage = errorJson.error;
+                        }
+                    } catch {
+                        // Non-JSON error body
+                    }
+
+                    throw Object.assign(new Error(errorMessage), { status: res.status });
+                }
                 if (!res.body) throw new Error('No response body');
 
                 const reader = res.body.getReader();
@@ -300,7 +320,20 @@ export function useBuilder(agent: Agent) {
                     }
                 }
             } catch (err) {
-                console.error('Analysis failed:', err);
+                if (getErrorStatus(err) === 401) {
+                    const assistantMsg: BuilderMessage = {
+                        id: crypto.randomUUID(),
+                        role: 'assistant',
+                        content: 'Your session has expired. Please sign in again to continue building this assistant.',
+                        timestamp: Date.now(),
+                    };
+                    dispatch({ type: 'ADD_USER_MESSAGE', message: assistantMsg });
+                    if (typeof window !== 'undefined') {
+                        window.location.href = '/login';
+                    }
+                } else {
+                    console.error('Analysis failed:', err);
+                }
                 dispatch({ type: 'PROCESSING_ERROR' });
             } finally {
                 processingRef.current = false;

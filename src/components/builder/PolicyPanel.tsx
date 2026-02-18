@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { CategoryType, ConsultationPolicy } from '@/lib/types';
+import type { CategoryType, ConsultationPolicy, PolicyRule } from '@/lib/types';
 
 const CATEGORY_CONFIG: Record<CategoryType, { label: string; accentClass: string }> = {
     see_urgently: { label: 'See Urgently', accentClass: 'text-accent-red' },
@@ -18,6 +18,138 @@ function collectAllRuleIds(policy: ConsultationPolicy): Set<string> {
         ids.add(rule.id);
     }
     return ids;
+}
+
+interface GroupedRuleItem {
+    rule: PolicyRule;
+    displayText: string;
+}
+
+interface GroupedRuleSection {
+    key: string;
+    macroCategory?: string;
+    items: GroupedRuleItem[];
+}
+
+function normalizeMacroCategory(value?: string): string | null {
+    if (!value) return null;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+
+function inferMacroSplit(description: string): { macroCategory: string; displayText: string } | null {
+    const match = description.match(/^([^,:]{3,80})[:,]\s+(.+)$/);
+    if (!match) return null;
+
+    const macroCategory = match[1]?.trim();
+    const displayText = match[2]?.trim();
+
+    if (!macroCategory || !displayText) return null;
+    return { macroCategory, displayText };
+}
+
+function escapeRegExp(value: string): string {
+    return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function stripMacroPrefix(description: string, macroCategory: string): string {
+    const prefixPattern = new RegExp(
+        `^${escapeRegExp(macroCategory)}\\s*(?:,|:|->|→|—|-)\\s*`,
+        'i'
+    );
+    const stripped = description.replace(prefixPattern, '').trim();
+    return stripped || description;
+}
+
+const CATEGORY_SUFFIX_LABELS: Record<CategoryType, string[]> = {
+    see_urgently: ['see urgently', 'see_urgently', 'urgent'],
+    see: ['see'],
+    cancel: ['cancel'],
+};
+
+function stripTrailingCategoryAction(description: string, categoryType: CategoryType): string {
+    for (const label of CATEGORY_SUFFIX_LABELS[categoryType]) {
+        const arrowSuffixPattern = new RegExp(
+            `\\s*(?:,|:|;)?\\s*(?:->|→|—|-)\\s*${escapeRegExp(label)}\\s*$`,
+            'i'
+        );
+
+        if (arrowSuffixPattern.test(description)) {
+            const stripped = description.replace(arrowSuffixPattern, '').trim();
+            return stripped || description;
+        }
+
+        const parenSuffixPattern = new RegExp(`\\s*\\(${escapeRegExp(label)}\\)\\s*$`, 'i');
+        if (parenSuffixPattern.test(description)) {
+            const stripped = description.replace(parenSuffixPattern, '').trim();
+            return stripped || description;
+        }
+    }
+
+    return description;
+}
+
+function buildRuleSections(rules: PolicyRule[]): GroupedRuleSection[] {
+    const inferredByRuleId = new Map<string, { macroCategory: string; displayText: string }>();
+    const inferredCounts = new Map<string, number>();
+
+    for (const rule of rules) {
+        if (normalizeMacroCategory(rule.macroCategory)) continue;
+        const inferred = inferMacroSplit(rule.description);
+        if (!inferred) continue;
+        inferredByRuleId.set(rule.id, inferred);
+        const countKey = inferred.macroCategory.toLowerCase();
+        inferredCounts.set(countKey, (inferredCounts.get(countKey) ?? 0) + 1);
+    }
+
+    const eligibleInferred = new Set(
+        Array.from(inferredCounts.entries())
+            .filter(([, count]) => count > 1)
+            .map(([countKey]) => countKey)
+    );
+
+    const grouped: GroupedRuleSection[] = [];
+    const groupedIndexByKey = new Map<string, number>();
+
+    for (const rule of rules) {
+        const explicitMacro = normalizeMacroCategory(rule.macroCategory);
+        const inferred = inferredByRuleId.get(rule.id);
+        const inferredKey = inferred?.macroCategory.toLowerCase();
+        const macroCategory =
+            explicitMacro ??
+            (inferred && inferredKey && eligibleInferred.has(inferredKey)
+                ? inferred.macroCategory
+                : null);
+
+        const strippedMacroPrefixText = macroCategory
+            ? stripMacroPrefix(rule.description, macroCategory)
+            : rule.description;
+        const displayText = stripTrailingCategoryAction(strippedMacroPrefixText, rule.categoryType);
+
+        if (!macroCategory) {
+            grouped.push({
+                key: `rule:${rule.id}`,
+                items: [{ rule, displayText }],
+            });
+            continue;
+        }
+
+        const macroKey = `macro:${macroCategory.toLowerCase()}`;
+        const existingIndex = groupedIndexByKey.get(macroKey);
+        if (existingIndex === undefined) {
+            groupedIndexByKey.set(macroKey, grouped.length);
+            grouped.push({
+                key: macroKey,
+                macroCategory,
+                items: [{ rule, displayText }],
+            });
+            continue;
+        }
+
+        grouped[existingIndex]!.items.push({ rule, displayText });
+    }
+
+    return grouped;
 }
 
 interface PolicyPanelProps {
@@ -60,7 +192,7 @@ export function PolicyPanel({ open, onClose, policy }: PolicyPanelProps) {
                     animate={{ width: 480, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ type: 'spring', damping: 35, stiffness: 350 }}
-                    className="h-full bg-bg-panel flex flex-col overflow-hidden flex-shrink-0 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] border-l border-border/40"
+                    className="h-full bg-white flex flex-col overflow-hidden flex-shrink-0 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] border-l border-border/40"
                 >
                     {/* Header */}
                     <div className="flex items-center justify-between px-8 py-8 flex-shrink-0">
@@ -69,7 +201,7 @@ export function PolicyPanel({ open, onClose, policy }: PolicyPanelProps) {
                                 Consultation Charter
                             </h2>
                             {policy && (
-                                <p className="text-[10px] uppercase tracking-[0.2em] text-text-secondary mt-1 font-bold opacity-60">
+                                <p className="text-[10px] uppercase tracking-[0.2em] text-text-secondary mt-1 opacity-60">
                                     Logic Version {policy.version}.0
                                 </p>
                             )}
@@ -98,40 +230,80 @@ export function PolicyPanel({ open, onClose, policy }: PolicyPanelProps) {
                                         const rules = policy.rules.filter((r) => r.categoryType === categoryType);
                                         if (rules.length === 0) return null;
                                         const config = CATEGORY_CONFIG[categoryType];
+                                        const groupedSections = buildRuleSections(rules);
+
                                         return (
                                             <div key={categoryType}>
                                                 <div className="flex items-baseline gap-3 mb-4">
-                                                    <h3 className={`text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 ${config.accentClass}`}>
+                                                    <h3 className={`text-[10px] uppercase tracking-[0.2em] opacity-80 ${config.accentClass}`}>
                                                         {config.label}
                                                     </h3>
                                                     <div className="h-px flex-1 bg-border/30" />
                                                 </div>
-                                                <ul className="space-y-4">
+                                                <div className="space-y-4">
                                                     <AnimatePresence initial={false}>
-                                                        {rules.map((rule) => {
-                                                            const isNew = newRuleIds.has(rule.id);
+                                                        {groupedSections.map((section) => {
+                                                            if (!section.macroCategory) {
+                                                                const item = section.items[0]!;
+                                                                const isNew = newRuleIds.has(item.rule.id);
+
+                                                                return (
+                                                                    <motion.div
+                                                                        key={item.rule.id}
+                                                                        layout
+                                                                        initial={{ opacity: 0, x: -4 }}
+                                                                        animate={{
+                                                                            opacity: 1,
+                                                                            x: 0,
+                                                                        }}
+                                                                        exit={{ opacity: 0, scale: 0.95 }}
+                                                                        transition={{ duration: 0.4 }}
+                                                                        className={`text-[13px] text-text-primary leading-relaxed pl-4 border-l-2 py-1 transition-colors duration-1000 ${
+                                                                            isNew ? 'border-accent-blue/40' : 'border-border/35'
+                                                                        }`}
+                                                                    >
+                                                                        <span className="opacity-90">{item.displayText}</span>
+                                                                    </motion.div>
+                                                                );
+                                                            }
+
+                                                            const hasNewRule = section.items.some((item) => newRuleIds.has(item.rule.id));
+
                                                             return (
-                                                                <motion.li
-                                                                    key={rule.id}
+                                                                <motion.div
+                                                                    key={section.key}
                                                                     layout
                                                                     initial={{ opacity: 0, x: -4 }}
                                                                     animate={{
                                                                         opacity: 1,
                                                                         x: 0,
-                                                                        borderLeftColor: isNew ? 'var(--color-accent-blue)' : 'transparent',
                                                                     }}
                                                                     exit={{ opacity: 0, scale: 0.95 }}
                                                                     transition={{ duration: 0.4 }}
-                                                                    className={`text-[13px] text-text-primary leading-relaxed pl-4 border-l-2 border-transparent transition-colors duration-1000 ${
-                                                                        isNew ? 'border-accent-blue/40 bg-accent-blue/5 py-1' : ''
+                                                                    className={`pl-4 border-l-2 transition-colors duration-1000 ${
+                                                                        hasNewRule ? 'border-accent-blue/40 py-2' : 'border-border/35 py-1'
                                                                     }`}
                                                                 >
-                                                                    <span className="opacity-90">{rule.description}</span>
-                                                                </motion.li>
+                                                                    <p className="text-[13px] leading-relaxed text-text-primary">
+                                                                        {section.macroCategory}
+                                                                    </p>
+                                                                    <ul className="mt-2 pl-4 space-y-2 list-disc marker:text-text-secondary/60">
+                                                                        {section.items.map((item) => {
+                                                                            return (
+                                                                                <li
+                                                                                    key={item.rule.id}
+                                                                                    className="text-[13px] leading-relaxed text-text-primary"
+                                                                                >
+                                                                                    <span className="opacity-90">{item.displayText}</span>
+                                                                                </li>
+                                                                            );
+                                                                        })}
+                                                                    </ul>
+                                                                </motion.div>
                                                             );
                                                         })}
                                                     </AnimatePresence>
-                                                </ul>
+                                                </div>
                                             </div>
                                         );
                                     })}

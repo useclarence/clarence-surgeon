@@ -143,6 +143,10 @@ export async function POST(req: Request) {
                                 ...r,
                                 id: r.id ?? crypto.randomUUID(),
                                 categoryType: r.categoryType ?? 'cancel',
+                                macroCategory:
+                                    typeof r.macroCategory === 'string' && r.macroCategory.trim()
+                                        ? r.macroCategory.trim()
+                                        : undefined,
                             }));
                         }
 
