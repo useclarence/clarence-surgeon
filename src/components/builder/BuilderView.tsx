@@ -124,6 +124,8 @@ export function BuilderView({ agent }: BuilderViewProps) {
                     messages={state.messages}
                     isProcessing={state.status === 'processing'}
                     streamingThought={state.streamingThought}
+                    ruleCount={state.policy?.rules.length ?? 0}
+                    answerCount={state.messages.filter((m) => m.role === 'user').length}
                     onAnswerClarification={answerClarification}
                 />
 

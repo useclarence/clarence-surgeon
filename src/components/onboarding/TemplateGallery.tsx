@@ -189,9 +189,7 @@ function GenericTemplateDetails({ template }: { template: AgentTemplate }) {
                 <ul className="mt-2 space-y-2">
                     {template.policy.rules.map((rule) => (
                         <li key={rule.id} className="rounded-lg border border-border/45 bg-bg-primary/40 px-3 py-2 text-xs leading-relaxed text-text-secondary">
-                            <span className="text-text-primary font-medium">{rule.condition}</span>
-                            {' -> '}
-                            {rule.outcome}
+                            {rule.description}
                         </li>
                     ))}
                 </ul>

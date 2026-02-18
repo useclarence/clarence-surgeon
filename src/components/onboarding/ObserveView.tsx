@@ -237,7 +237,7 @@ export function ObserveView() {
 
     return (
         <div className="space-y-4">
-            {SCENARIOS.map((scenario) => {
+            {SCENARIOS.map((scenario, scenarioIndex) => {
                 const isExpanded = expandedId === scenario.id;
                 const isPlaying = activePlaybackId === scenario.id;
                 const triage = TRIAGE_LABELS[scenario.triageResult];
@@ -254,7 +254,7 @@ export function ObserveView() {
                         >
                             <div className="flex items-center gap-4">
                                 <div className="w-9 h-9 rounded-full bg-bg-panel flex items-center justify-center text-sm font-medium text-text-secondary">
-                                    {scenario.patientName.split(' ').map((n) => n[0]).join('')}
+                                    {scenarioIndex + 1}
                                 </div>
                                 <div>
                                     <p className="text-sm font-medium text-text-primary">
