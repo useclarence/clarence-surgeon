@@ -404,6 +404,7 @@ export function useBuilder(agent: Agent) {
                 policy: stateRef.current.policy,
                 conversationHistory: stateRef.current.messages,
                 onboardingComplete: true,
+                status: 'building',
             }),
         }).catch((err) => console.error('Failed to persist on submit:', err));
         dispatch({ type: 'SUBMIT_POLICY' });
