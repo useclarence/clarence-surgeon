@@ -24,43 +24,24 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         available: true,
         policy: {
             version: 1,
-            blocks: {
-                highPotentialPatients: {
-                    items: [
-                        { id: 'sh-h1', description: 'Full-thickness rotator cuff tear with significant weakness and failed conservative treatment (>6 weeks)' },
-                        { id: 'sh-h2', description: 'Recurrent shoulder dislocations (>2 episodes) in active patient' },
-                        { id: 'sh-h3', description: 'Displaced proximal humerus fracture requiring surgical fixation' },
-                        { id: 'sh-h4', description: 'Advanced glenohumeral arthritis with bone-on-bone changes and failed non-operative management' },
-                    ],
-                },
-                lowPotentialPatients: {
-                    items: [
-                        { id: 'sh-l1', description: 'Partial rotator cuff tear with mild symptoms responding to physical therapy' },
-                        { id: 'sh-l2', description: 'Shoulder impingement without structural tear on imaging' },
-                        { id: 'sh-l3', description: 'Frozen shoulder in early inflammatory phase — non-operative management preferred' },
-                    ],
-                },
-                inBetween: {
-                    items: [
-                        { id: 'sh-m1', description: 'Large rotator cuff tear in older patient — repair vs. reverse arthroplasty discussion' },
-                        { id: 'sh-m2', description: 'First-time dislocation in young athlete — surgery vs. rehabilitation depends on sport and exam findings' },
-                        { id: 'sh-m3', description: 'AC joint arthritis with persistent pain — may benefit from distal clavicle excision if conservative fails' },
-                    ],
-                },
-                forNonQualified: {
-                    items: [
-                        { id: 'sh-n1', description: 'Refer to sports medicine or physiatry for conservative management' },
-                        { id: 'sh-n2', description: 'Recommend structured physical therapy program (minimum 6 weeks)' },
-                        { id: 'sh-n3', description: 'Offer corticosteroid injection for diagnostic and therapeutic purposes' },
-                    ],
-                },
-            },
             rules: [
-                { id: 'sh-r1', type: 'gate', condition: 'Pathology is not within the shoulder girdle', outcome: 'Redirect to appropriate specialty', dimension: 'scope' },
-                { id: 'sh-r2', type: 'prerequisite', condition: 'No MRI or ultrasound of the shoulder within the last 6 months', outcome: 'Request imaging before consultation', dimension: 'readiness' },
-                { id: 'sh-r3', type: 'accelerator', condition: 'Acute displaced fracture or shoulder dislocation unable to be reduced', outcome: 'Urgent consultation within 24-48 hours', dimension: 'urgency' },
-                { id: 'sh-r4', type: 'prerequisite', condition: 'No trial of conservative treatment for non-urgent cases', outcome: 'Recommend 6 weeks of physical therapy first', dimension: 'readiness' },
-                { id: 'sh-r5', type: 'accelerator', condition: 'Vascular compromise or nerve injury associated with shoulder trauma', outcome: 'Emergency referral — same day', dimension: 'urgency' },
+                // See Urgently
+                { id: 'sh-u1', description: 'Acute displaced fracture or shoulder dislocation unable to be reduced — urgent consultation within 24-48 hours', categoryType: 'see_urgently' },
+                { id: 'sh-u2', description: 'Vascular compromise or nerve injury associated with shoulder trauma — emergency referral same day', categoryType: 'see_urgently' },
+                // See
+                { id: 'sh-s1', description: 'Full-thickness rotator cuff tear with significant weakness and failed conservative treatment (>6 weeks)', categoryType: 'see' },
+                { id: 'sh-s2', description: 'Recurrent shoulder dislocations (>2 episodes) in active patient', categoryType: 'see' },
+                { id: 'sh-s3', description: 'Displaced proximal humerus fracture requiring surgical fixation', categoryType: 'see' },
+                { id: 'sh-s4', description: 'Advanced glenohumeral arthritis with bone-on-bone changes and failed non-operative management', categoryType: 'see' },
+                { id: 'sh-s5', description: 'Large rotator cuff tear in older patient — request MRI before appointment for repair vs. reverse arthroplasty discussion', categoryType: 'see' },
+                { id: 'sh-s6', description: 'First-time dislocation in young athlete — request MRI before appointment', categoryType: 'see' },
+                { id: 'sh-s7', description: 'No MRI or ultrasound within 6 months — request imaging before appointment', categoryType: 'see' },
+                // Cancel
+                { id: 'sh-c1', description: 'Pathology not within the shoulder girdle — redirect to appropriate specialty', categoryType: 'cancel' },
+                { id: 'sh-c2', description: 'Partial rotator cuff tear with mild symptoms responding to physical therapy — redirect to sports medicine', categoryType: 'cancel' },
+                { id: 'sh-c3', description: 'Shoulder impingement without structural tear on imaging — redirect to sports medicine', categoryType: 'cancel' },
+                { id: 'sh-c4', description: 'Frozen shoulder in early inflammatory phase — redirect to physiatry for non-operative management', categoryType: 'cancel' },
+                { id: 'sh-c5', description: 'No trial of conservative treatment for non-urgent cases — redirect to physiotherapy for 6 weeks first', categoryType: 'cancel' },
             ],
         },
     },
@@ -73,43 +54,24 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         icon: '🦴',
         policy: {
             version: 1,
-            blocks: {
-                highPotentialPatients: {
-                    items: [
-                        { id: 'sp-h1', description: 'Lumbar disc herniation with radiculopathy and failed conservative treatment (>6 weeks)' },
-                        { id: 'sp-h2', description: 'Cervical myelopathy with progressive neurological deficit' },
-                        { id: 'sp-h3', description: 'Spinal stenosis with neurogenic claudication limiting daily function' },
-                        { id: 'sp-h4', description: 'Unstable spinal fracture or traumatic spinal cord injury' },
-                    ],
-                },
-                lowPotentialPatients: {
-                    items: [
-                        { id: 'sp-l1', description: 'Mechanical back pain without radiculopathy or red flags' },
-                        { id: 'sp-l2', description: 'Degenerative disc disease with no neurological compromise' },
-                        { id: 'sp-l3', description: 'Chronic pain syndrome without structural surgical target' },
-                    ],
-                },
-                inBetween: {
-                    items: [
-                        { id: 'sp-m1', description: 'Moderate stenosis with intermittent symptoms — may benefit from surgery if conservative fails' },
-                        { id: 'sp-m2', description: 'Recurrent disc herniation after prior surgery — depends on imaging findings' },
-                        { id: 'sp-m3', description: 'Scoliosis with progressive curve but manageable symptoms' },
-                    ],
-                },
-                forNonQualified: {
-                    items: [
-                        { id: 'sp-n1', description: 'Refer to pain management or physiatry for conservative care' },
-                        { id: 'sp-n2', description: 'Recommend structured physical therapy program (minimum 6 weeks)' },
-                        { id: 'sp-n3', description: 'Provide patient education materials on spine health and when to return' },
-                    ],
-                },
-            },
             rules: [
-                { id: 'sp-r1', type: 'gate', condition: 'Pathology is not within the spinal axis', outcome: 'Redirect to appropriate specialty', dimension: 'scope' },
-                { id: 'sp-r2', type: 'prerequisite', condition: 'No MRI or CT of the spine within the last 6 months', outcome: 'Request imaging before consultation', dimension: 'readiness' },
-                { id: 'sp-r3', type: 'accelerator', condition: 'Progressive neurological deficit (motor weakness, cauda equina symptoms)', outcome: 'Urgent consultation within 48 hours', dimension: 'urgency' },
-                { id: 'sp-r4', type: 'prerequisite', condition: 'No trial of conservative treatment for non-urgent cases', outcome: 'Recommend 6 weeks of physical therapy first', dimension: 'readiness' },
-                { id: 'sp-r5', type: 'accelerator', condition: 'Bladder or bowel dysfunction suggesting cauda equina', outcome: 'Emergency referral — same day', dimension: 'urgency' },
+                // See Urgently
+                { id: 'sp-u1', description: 'Progressive neurological deficit (motor weakness, cauda equina symptoms) — urgent consultation within 48 hours', categoryType: 'see_urgently' },
+                { id: 'sp-u2', description: 'Bladder or bowel dysfunction suggesting cauda equina — emergency referral same day', categoryType: 'see_urgently' },
+                { id: 'sp-u3', description: 'Unstable spinal fracture or traumatic spinal cord injury', categoryType: 'see_urgently' },
+                // See
+                { id: 'sp-s1', description: 'Lumbar disc herniation with radiculopathy and failed conservative treatment (>6 weeks)', categoryType: 'see' },
+                { id: 'sp-s2', description: 'Cervical myelopathy with progressive neurological deficit', categoryType: 'see' },
+                { id: 'sp-s3', description: 'Spinal stenosis with neurogenic claudication limiting daily function', categoryType: 'see' },
+                { id: 'sp-s4', description: 'Moderate stenosis with intermittent symptoms — request MRI before appointment', categoryType: 'see' },
+                { id: 'sp-s5', description: 'Recurrent disc herniation after prior surgery — request MRI before appointment', categoryType: 'see' },
+                { id: 'sp-s6', description: 'No MRI or CT of the spine within 6 months — request imaging before appointment', categoryType: 'see' },
+                // Cancel
+                { id: 'sp-c1', description: 'Pathology not within the spinal axis — redirect to appropriate specialty', categoryType: 'cancel' },
+                { id: 'sp-c2', description: 'Mechanical back pain without radiculopathy or red flags — redirect to pain management or physiatry', categoryType: 'cancel' },
+                { id: 'sp-c3', description: 'Degenerative disc disease with no neurological compromise — redirect to physiotherapy', categoryType: 'cancel' },
+                { id: 'sp-c4', description: 'Chronic pain syndrome without structural surgical target — redirect to pain management', categoryType: 'cancel' },
+                { id: 'sp-c5', description: 'No trial of conservative treatment — redirect to physiotherapy for 6 weeks first', categoryType: 'cancel' },
             ],
         },
     },
@@ -122,40 +84,20 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         icon: '🦿',
         policy: {
             version: 1,
-            blocks: {
-                highPotentialPatients: {
-                    items: [
-                        { id: 'kr-h1', description: 'Bone-on-bone arthritis (Kellgren-Lawrence grade 4) with significant functional limitation' },
-                        { id: 'kr-h2', description: 'Failed all conservative measures including injections, PT, and NSAIDs for >6 months' },
-                        { id: 'kr-h3', description: 'Night pain and rest pain affecting quality of life' },
-                    ],
-                },
-                lowPotentialPatients: {
-                    items: [
-                        { id: 'kr-l1', description: 'Early osteoarthritis (KL grade 1-2) with mild symptoms' },
-                        { id: 'kr-l2', description: 'Active infection or skin condition over the knee' },
-                        { id: 'kr-l3', description: 'BMI >45 without willingness to optimize weight pre-operatively' },
-                    ],
-                },
-                inBetween: {
-                    items: [
-                        { id: 'kr-m1', description: 'Moderate arthritis (KL grade 3) with variable symptoms — may benefit from partial replacement' },
-                        { id: 'kr-m2', description: 'Younger patient (<55) with significant arthritis — requires careful discussion of longevity expectations' },
-                    ],
-                },
-                forNonQualified: {
-                    items: [
-                        { id: 'kr-n1', description: 'Refer to sports medicine or rheumatology for ongoing conservative management' },
-                        { id: 'kr-n2', description: 'Recommend weight optimization program if BMI is a barrier' },
-                        { id: 'kr-n3', description: 'Offer viscosupplementation or PRP injection referral' },
-                    ],
-                },
-            },
             rules: [
-                { id: 'kr-r1', type: 'gate', condition: 'Pain is not localized to the knee joint', outcome: 'Evaluate for hip or lumbar referred pain first', dimension: 'scope' },
-                { id: 'kr-r2', type: 'prerequisite', condition: 'No weight-bearing X-rays of the knee', outcome: 'Order standing AP and lateral knee X-rays', dimension: 'readiness' },
-                { id: 'kr-r3', type: 'prerequisite', condition: 'No documented trial of physical therapy', outcome: 'Recommend structured PT program before consultation', dimension: 'readiness' },
-                { id: 'kr-r4', type: 'accelerator', condition: 'Acute fracture or mechanical locking of the knee', outcome: 'Expedited surgical consultation', dimension: 'urgency' },
+                // See Urgently
+                { id: 'kr-u1', description: 'Acute fracture or mechanical locking of the knee — expedited surgical consultation', categoryType: 'see_urgently' },
+                // See
+                { id: 'kr-s1', description: 'Bone-on-bone arthritis (Kellgren-Lawrence grade 4) with significant functional limitation', categoryType: 'see' },
+                { id: 'kr-s2', description: 'Failed all conservative measures including injections, PT, and NSAIDs for >6 months', categoryType: 'see' },
+                { id: 'kr-s3', description: 'Night pain and rest pain affecting quality of life', categoryType: 'see' },
+                { id: 'kr-s4', description: 'Moderate arthritis (KL grade 3) with variable symptoms — request weight-bearing X-rays before appointment', categoryType: 'see' },
+                { id: 'kr-s5', description: 'No weight-bearing X-rays — request standing AP and lateral knee X-rays before appointment', categoryType: 'see' },
+                // Cancel
+                { id: 'kr-c1', description: 'Pain not localized to the knee joint — evaluate for hip or lumbar referred pain first', categoryType: 'cancel' },
+                { id: 'kr-c2', description: 'Early osteoarthritis (KL grade 1-2) with mild symptoms — redirect to sports medicine or rheumatology', categoryType: 'cancel' },
+                { id: 'kr-c3', description: 'BMI >45 without willingness to optimize weight — redirect to weight optimization program', categoryType: 'cancel' },
+                { id: 'kr-c4', description: 'No documented trial of physical therapy — redirect to structured PT program before consultation', categoryType: 'cancel' },
             ],
         },
     },
@@ -168,40 +110,22 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         icon: '🧠',
         policy: {
             version: 1,
-            blocks: {
-                highPotentialPatients: {
-                    items: [
-                        { id: 'bt-h1', description: 'Symptomatic mass lesion with mass effect or midline shift' },
-                        { id: 'bt-h2', description: 'Rapidly growing lesion on serial imaging' },
-                        { id: 'bt-h3', description: 'Lesion in a surgically accessible location with high suspicion of high-grade glioma' },
-                    ],
-                },
-                lowPotentialPatients: {
-                    items: [
-                        { id: 'bt-l1', description: 'Small incidental meningioma (<2cm) without symptoms or edema' },
-                        { id: 'bt-l2', description: 'Stable lesion on serial imaging over >2 years with no symptoms' },
-                        { id: 'bt-l3', description: 'Lesion more appropriate for radiosurgery than open surgery' },
-                    ],
-                },
-                inBetween: {
-                    items: [
-                        { id: 'bt-m1', description: 'Growing but asymptomatic lesion — surgery timing depends on location and growth rate' },
-                        { id: 'bt-m2', description: 'Deep-seated lesion requiring stereotactic biopsy for diagnosis before treatment planning' },
-                    ],
-                },
-                forNonQualified: {
-                    items: [
-                        { id: 'bt-n1', description: 'Establish surveillance imaging protocol (MRI every 6-12 months)' },
-                        { id: 'bt-n2', description: 'Refer to neuro-oncology for non-surgical management options' },
-                        { id: 'bt-n3', description: 'Refer to radiation oncology if radiosurgery is more appropriate' },
-                    ],
-                },
-            },
             rules: [
-                { id: 'bt-r1', type: 'gate', condition: 'Lesion is extracranial or spinal', outcome: 'Redirect to spine surgery or appropriate specialty', dimension: 'scope' },
-                { id: 'bt-r2', type: 'prerequisite', condition: 'No contrast-enhanced MRI brain within 3 months', outcome: 'Order MRI with gadolinium before consultation', dimension: 'readiness' },
-                { id: 'bt-r3', type: 'accelerator', condition: 'Acute neurological deterioration, seizures, or signs of herniation', outcome: 'Emergency neurosurgical evaluation', dimension: 'urgency' },
-                { id: 'bt-r4', type: 'accelerator', condition: 'New onset seizures with mass lesion', outcome: 'Urgent consultation within 1 week', dimension: 'urgency' },
+                // See Urgently
+                { id: 'bt-u1', description: 'Acute neurological deterioration, seizures, or signs of herniation — emergency neurosurgical evaluation', categoryType: 'see_urgently' },
+                { id: 'bt-u2', description: 'New onset seizures with mass lesion — urgent consultation within 1 week', categoryType: 'see_urgently' },
+                // See
+                { id: 'bt-s1', description: 'Symptomatic mass lesion with mass effect or midline shift', categoryType: 'see' },
+                { id: 'bt-s2', description: 'Rapidly growing lesion on serial imaging', categoryType: 'see' },
+                { id: 'bt-s3', description: 'Lesion in surgically accessible location with high suspicion of high-grade glioma', categoryType: 'see' },
+                { id: 'bt-s4', description: 'Growing but asymptomatic lesion — request contrast-enhanced MRI before appointment', categoryType: 'see' },
+                { id: 'bt-s5', description: 'Deep-seated lesion requiring stereotactic biopsy — request contrast-enhanced MRI before appointment', categoryType: 'see' },
+                { id: 'bt-s6', description: 'No contrast-enhanced MRI brain within 3 months — request MRI with gadolinium before appointment', categoryType: 'see' },
+                // Cancel
+                { id: 'bt-c1', description: 'Lesion is extracranial or spinal — redirect to spine surgery or appropriate specialty', categoryType: 'cancel' },
+                { id: 'bt-c2', description: 'Small incidental meningioma (<2cm) without symptoms or edema — surveillance imaging protocol, redirect to neuro-oncology', categoryType: 'cancel' },
+                { id: 'bt-c3', description: 'Stable lesion on serial imaging over >2 years with no symptoms — surveillance protocol', categoryType: 'cancel' },
+                { id: 'bt-c4', description: 'Lesion more appropriate for radiosurgery — redirect to radiation oncology', categoryType: 'cancel' },
             ],
         },
     },
@@ -214,38 +138,19 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         icon: '🩺',
         policy: {
             version: 1,
-            blocks: {
-                highPotentialPatients: {
-                    items: [
-                        { id: 'hr-h1', description: 'Symptomatic hernia causing pain, limitation of activity, or cosmetic concern' },
-                        { id: 'hr-h2', description: 'Incarcerated hernia that was manually reduced — needs elective repair to prevent recurrence' },
-                        { id: 'hr-h3', description: 'Enlarging hernia over serial examinations' },
-                    ],
-                },
-                lowPotentialPatients: {
-                    items: [
-                        { id: 'hr-l1', description: 'Small asymptomatic inguinal hernia in elderly patient with significant comorbidities' },
-                        { id: 'hr-l2', description: 'Patient unable to tolerate general anesthesia without significant risk optimization' },
-                    ],
-                },
-                inBetween: {
-                    items: [
-                        { id: 'hr-m1', description: 'Mildly symptomatic hernia in patient with moderate surgical risk — watchful waiting vs. repair discussion' },
-                        { id: 'hr-m2', description: 'Complex incisional hernia requiring component separation — needs multidisciplinary planning' },
-                    ],
-                },
-                forNonQualified: {
-                    items: [
-                        { id: 'hr-n1', description: 'Watchful waiting protocol with instructions on signs of incarceration/strangulation' },
-                        { id: 'hr-n2', description: 'Refer to internal medicine for surgical risk optimization before reconsideration' },
-                        { id: 'hr-n3', description: 'Provide hernia truss/support garment for symptom management' },
-                    ],
-                },
-            },
             rules: [
-                { id: 'hr-r1', type: 'gate', condition: 'Mass is not a hernia (lipoma, lymphadenopathy, etc.)', outcome: 'Redirect to appropriate workup', dimension: 'scope' },
-                { id: 'hr-r2', type: 'prerequisite', condition: 'BMI >40 for elective ventral hernia repair', outcome: 'Weight optimization required before surgery', dimension: 'readiness' },
-                { id: 'hr-r3', type: 'accelerator', condition: 'Signs of strangulation (irreducible, tender, erythematous)', outcome: 'Emergency surgical consultation', dimension: 'urgency' },
+                // See Urgently
+                { id: 'hr-u1', description: 'Signs of strangulation (irreducible, tender, erythematous) — emergency surgical consultation', categoryType: 'see_urgently' },
+                // See
+                { id: 'hr-s1', description: 'Symptomatic hernia causing pain, limitation of activity, or cosmetic concern', categoryType: 'see' },
+                { id: 'hr-s2', description: 'Incarcerated hernia that was manually reduced — needs elective repair to prevent recurrence', categoryType: 'see' },
+                { id: 'hr-s3', description: 'Enlarging hernia over serial examinations', categoryType: 'see' },
+                { id: 'hr-s4', description: 'Complex incisional hernia requiring component separation — needs multidisciplinary planning', categoryType: 'see' },
+                // Cancel
+                { id: 'hr-c1', description: 'Mass is not a hernia (lipoma, lymphadenopathy, etc.) — redirect to appropriate workup', categoryType: 'cancel' },
+                { id: 'hr-c2', description: 'Small asymptomatic inguinal hernia in elderly patient with significant comorbidities — watchful waiting with instructions on signs of incarceration', categoryType: 'cancel' },
+                { id: 'hr-c3', description: 'Patient unable to tolerate general anesthesia — redirect to internal medicine for risk optimization', categoryType: 'cancel' },
+                { id: 'hr-c4', description: 'BMI >40 for elective ventral hernia repair — redirect to weight optimization program', categoryType: 'cancel' },
             ],
         },
     },
@@ -258,40 +163,21 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         icon: '❤️',
         policy: {
             version: 1,
-            blocks: {
-                highPotentialPatients: {
-                    items: [
-                        { id: 'cb-h1', description: 'Left main coronary artery disease (>50% stenosis)' },
-                        { id: 'cb-h2', description: 'Triple vessel disease with reduced ejection fraction (<50%)' },
-                        { id: 'cb-h3', description: 'Failed PCI or anatomy not amenable to percutaneous intervention' },
-                    ],
-                },
-                lowPotentialPatients: {
-                    items: [
-                        { id: 'cb-l1', description: 'Single vessel disease amenable to PCI' },
-                        { id: 'cb-l2', description: 'Advanced age (>85) with multiple comorbidities and limited life expectancy' },
-                        { id: 'cb-l3', description: 'Diffusely diseased vessels not suitable for grafting' },
-                    ],
-                },
-                inBetween: {
-                    items: [
-                        { id: 'cb-m1', description: 'Two-vessel disease with proximal LAD involvement — CABG vs. PCI discussion based on SYNTAX score' },
-                        { id: 'cb-m2', description: 'Diabetic patient with multivessel disease — strong evidence favors CABG but risk-benefit analysis needed' },
-                    ],
-                },
-                forNonQualified: {
-                    items: [
-                        { id: 'cb-n1', description: 'Refer to interventional cardiology for PCI evaluation' },
-                        { id: 'cb-n2', description: 'Optimize medical therapy (dual antiplatelet, statin, beta-blocker)' },
-                        { id: 'cb-n3', description: 'Cardiac rehabilitation referral for functional optimization' },
-                    ],
-                },
-            },
             rules: [
-                { id: 'cb-r1', type: 'gate', condition: 'No documented coronary angiography or CT coronary angiogram', outcome: 'Cannot assess candidacy without angiographic data', dimension: 'scope' },
-                { id: 'cb-r2', type: 'prerequisite', condition: 'No recent echocardiogram (<6 months)', outcome: 'Order echocardiogram to assess ventricular function', dimension: 'readiness' },
-                { id: 'cb-r3', type: 'prerequisite', condition: 'Active smoking without cessation attempt', outcome: 'Require smoking cessation program enrollment before elective CABG', dimension: 'readiness' },
-                { id: 'cb-r4', type: 'accelerator', condition: 'Acute coronary syndrome with left main or critical triple vessel disease', outcome: 'Urgent surgical consultation within 24-48 hours', dimension: 'urgency' },
+                // See Urgently
+                { id: 'cb-u1', description: 'Acute coronary syndrome with left main or critical triple vessel disease — urgent surgical consultation within 24-48 hours', categoryType: 'see_urgently' },
+                // See
+                { id: 'cb-s1', description: 'Left main coronary artery disease (>50% stenosis)', categoryType: 'see' },
+                { id: 'cb-s2', description: 'Triple vessel disease with reduced ejection fraction (<50%)', categoryType: 'see' },
+                { id: 'cb-s3', description: 'Failed PCI or anatomy not amenable to percutaneous intervention', categoryType: 'see' },
+                { id: 'cb-s4', description: 'Two-vessel disease with proximal LAD involvement — request recent echocardiogram before appointment', categoryType: 'see' },
+                { id: 'cb-s5', description: 'No recent echocardiogram (<6 months) — request echo to assess ventricular function before appointment', categoryType: 'see' },
+                { id: 'cb-s6', description: 'Active smoking — require smoking cessation program enrollment before elective CABG', categoryType: 'see' },
+                // Cancel
+                { id: 'cb-c1', description: 'No documented coronary angiography or CT coronary angiogram — cannot assess candidacy, redirect for angiographic workup', categoryType: 'cancel' },
+                { id: 'cb-c2', description: 'Single vessel disease amenable to PCI — redirect to interventional cardiology', categoryType: 'cancel' },
+                { id: 'cb-c3', description: 'Advanced age (>85) with multiple comorbidities and limited life expectancy — optimize medical therapy', categoryType: 'cancel' },
+                { id: 'cb-c4', description: 'Diffusely diseased vessels not suitable for grafting — redirect to cardiology for medical management', categoryType: 'cancel' },
             ],
         },
     },
@@ -304,40 +190,21 @@ export const AGENT_TEMPLATES: AgentTemplate[] = [
         icon: '🔬',
         policy: {
             version: 1,
-            blocks: {
-                highPotentialPatients: {
-                    items: [
-                        { id: 'ps-h1', description: 'Localized prostate cancer (Gleason 7+) in patient with >10 year life expectancy' },
-                        { id: 'ps-h2', description: 'Severe BPH with urinary retention refractory to medical therapy' },
-                        { id: 'ps-h3', description: 'Recurrent gross hematuria from prostatic source' },
-                    ],
-                },
-                lowPotentialPatients: {
-                    items: [
-                        { id: 'ps-l1', description: 'Low-risk prostate cancer (Gleason 6) suitable for active surveillance' },
-                        { id: 'ps-l2', description: 'Mild BPH symptoms well-controlled with alpha-blockers' },
-                        { id: 'ps-l3', description: 'Advanced metastatic disease — systemic therapy more appropriate' },
-                    ],
-                },
-                inBetween: {
-                    items: [
-                        { id: 'ps-m1', description: 'Intermediate-risk prostate cancer — surgery vs. radiation discussion based on patient preference and anatomy' },
-                        { id: 'ps-m2', description: 'Moderate BPH with incomplete response to dual medical therapy — consider minimally invasive options' },
-                    ],
-                },
-                forNonQualified: {
-                    items: [
-                        { id: 'ps-n1', description: 'Active surveillance protocol for low-risk prostate cancer' },
-                        { id: 'ps-n2', description: 'Medical therapy optimization with urology follow-up' },
-                        { id: 'ps-n3', description: 'Refer to radiation oncology for non-surgical treatment discussion' },
-                    ],
-                },
-            },
             rules: [
-                { id: 'ps-r1', type: 'gate', condition: 'No tissue diagnosis (biopsy) for suspected cancer cases', outcome: 'Prostate biopsy required before surgical planning', dimension: 'scope' },
-                { id: 'ps-r2', type: 'prerequisite', condition: 'No PSA or digital rectal exam within 3 months', outcome: 'Order PSA and perform DRE before consultation', dimension: 'readiness' },
-                { id: 'ps-r3', type: 'prerequisite', condition: 'No staging imaging for intermediate/high-risk cancer', outcome: 'Order MRI pelvis and bone scan', dimension: 'readiness' },
-                { id: 'ps-r4', type: 'accelerator', condition: 'Acute urinary retention requiring catheterization', outcome: 'Expedited urology consultation', dimension: 'urgency' },
+                // See Urgently
+                { id: 'ps-u1', description: 'Acute urinary retention requiring catheterization — expedited urology consultation', categoryType: 'see_urgently' },
+                // See
+                { id: 'ps-s1', description: 'Localized prostate cancer (Gleason 7+) in patient with >10 year life expectancy', categoryType: 'see' },
+                { id: 'ps-s2', description: 'Severe BPH with urinary retention refractory to medical therapy', categoryType: 'see' },
+                { id: 'ps-s3', description: 'Recurrent gross hematuria from prostatic source', categoryType: 'see' },
+                { id: 'ps-s4', description: 'Intermediate-risk prostate cancer — request MRI pelvis and bone scan before appointment', categoryType: 'see' },
+                { id: 'ps-s5', description: 'Moderate BPH with incomplete response to dual medical therapy', categoryType: 'see' },
+                { id: 'ps-s6', description: 'No PSA or digital rectal exam within 3 months — request PSA and DRE before appointment', categoryType: 'see' },
+                // Cancel
+                { id: 'ps-c1', description: 'No tissue diagnosis (biopsy) for suspected cancer — redirect for prostate biopsy before surgical planning', categoryType: 'cancel' },
+                { id: 'ps-c2', description: 'Low-risk prostate cancer (Gleason 6) — redirect to active surveillance protocol', categoryType: 'cancel' },
+                { id: 'ps-c3', description: 'Mild BPH symptoms well-controlled with alpha-blockers — continue medical therapy with urology follow-up', categoryType: 'cancel' },
+                { id: 'ps-c4', description: 'Advanced metastatic disease — redirect to oncology for systemic therapy', categoryType: 'cancel' },
             ],
         },
     },

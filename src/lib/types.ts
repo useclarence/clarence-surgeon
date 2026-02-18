@@ -1,32 +1,16 @@
 // ── Consultation Policy ──
 
-export interface PolicyItem {
-    id: string;
-    description: string;
-    sourceQuote?: string;
-}
-
-export interface PolicyBlock {
-    items: PolicyItem[];
-}
+export type CategoryType = 'see_urgently' | 'see' | 'cancel';
 
 export interface PolicyRule {
     id: string;
-    type: 'gate' | 'prerequisite' | 'accelerator' | 'action';
-    condition: string;
-    outcome: string;
-    dimension: 'scope' | 'readiness' | 'urgency';
+    description: string;
+    categoryType: CategoryType;
     sourceQuote?: string;
 }
 
 export interface ConsultationPolicy {
     version: number;
-    blocks: {
-        highPotentialPatients: PolicyBlock;
-        lowPotentialPatients: PolicyBlock;
-        inBetween: PolicyBlock;
-        forNonQualified: PolicyBlock;
-    };
     rules: PolicyRule[];
 }
 
@@ -90,7 +74,7 @@ export interface BuilderState {
     processingContext: ProcessingContext;
     messages: BuilderMessage[];
     policy: ConsultationPolicy | null;
-    onboardingStep: 0 | 1 | 2 | 3 | 'complete';
+    onboardingStep: 0 | 1 | 2 | 'complete';
     showPolicyDrawer: boolean;
     interimText: string;
     streamingThought: string;

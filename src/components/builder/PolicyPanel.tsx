@@ -2,23 +2,18 @@
 
 import { useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { ConsultationPolicy, PolicyRule } from '@/lib/types';
-import { PolicyBlockView } from './PolicyBlockView';
+import type { CategoryType, ConsultationPolicy } from '@/lib/types';
 
-const RULE_TYPE_CONFIG: Record<PolicyRule['type'], { label: string; accentClass: string }> = {
-    gate: { label: 'Gates (Scope)', accentClass: 'text-accent-red' },
-    prerequisite: { label: 'Prerequisites (Readiness)', accentClass: 'text-accent-amber' },
-    accelerator: { label: 'Accelerators (Urgency)', accentClass: 'text-medical' },
-    action: { label: 'Actions', accentClass: 'text-accent-green' },
+const CATEGORY_CONFIG: Record<CategoryType, { label: string; accentClass: string }> = {
+    see_urgently: { label: 'See Urgently', accentClass: 'text-accent-red' },
+    see: { label: 'See', accentClass: 'text-accent-green' },
+    cancel: { label: 'Cancel', accentClass: 'text-accent-amber' },
 };
 
-function collectAllItemIds(policy: ConsultationPolicy): Set<string> {
+const CATEGORY_ORDER: CategoryType[] = ['see_urgently', 'see', 'cancel'];
+
+function collectAllRuleIds(policy: ConsultationPolicy): Set<string> {
     const ids = new Set<string>();
-    for (const block of Object.values(policy.blocks)) {
-        for (const item of block.items) {
-            ids.add(item.id);
-        }
-    }
     for (const rule of policy.rules) {
         ids.add(rule.id);
     }
@@ -32,15 +27,15 @@ interface PolicyPanelProps {
 }
 
 export function PolicyPanel({ open, onClose, policy }: PolicyPanelProps) {
-    const prevItemIdsRef = useRef<Set<string>>(new Set());
+    const prevRuleIdsRef = useRef<Set<string>>(new Set());
 
-    // Compute which item IDs are new (not in the previous policy)
-    const newItemIds = useMemo(() => {
+    // Compute which rule IDs are new (not in the previous policy)
+    const newRuleIds = useMemo(() => {
         if (!policy) return new Set<string>();
-        const currentIds = collectAllItemIds(policy);
+        const currentIds = collectAllRuleIds(policy);
         const newIds = new Set<string>();
         for (const id of currentIds) {
-            if (!prevItemIdsRef.current.has(id)) {
+            if (!prevRuleIdsRef.current.has(id)) {
                 newIds.add(id);
             }
         }
@@ -50,9 +45,12 @@ export function PolicyPanel({ open, onClose, policy }: PolicyPanelProps) {
     // Update the ref after rendering so next change can diff against it
     useEffect(() => {
         if (policy) {
-            prevItemIdsRef.current = collectAllItemIds(policy);
+            prevRuleIdsRef.current = collectAllRuleIds(policy);
         }
     }, [policy]);
+
+    // Detect legacy policy format (has blocks property)
+    const isLegacy = policy && 'blocks' in policy;
 
     return (
         <AnimatePresence>
@@ -64,7 +62,7 @@ export function PolicyPanel({ open, onClose, policy }: PolicyPanelProps) {
                     transition={{ type: 'spring', damping: 35, stiffness: 350 }}
                     className="h-full bg-bg-panel flex flex-col overflow-hidden flex-shrink-0 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] border-l border-border/40"
                 >
-                    {/* Header — Formal Title */}
+                    {/* Header */}
                     <div className="flex items-center justify-between px-8 py-8 flex-shrink-0">
                         <div>
                             <h2 className="text-xl font-serif text-text-primary tracking-tight italic">
@@ -86,96 +84,59 @@ export function PolicyPanel({ open, onClose, policy }: PolicyPanelProps) {
                         </button>
                     </div>
 
-                    {/* Content — Document Layout */}
+                    {/* Content */}
                     <div className="flex-1 overflow-y-auto px-8 py-2 custom-scrollbar pb-20">
                         {policy ? (
-                            <div className="space-y-12">
-                                <PolicyBlockView
-                                    title="High Potential (Priority)"
-                                    icon={
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                        </svg>
-                                    }
-                                    block={policy.blocks.highPotentialPatients}
-                                    accentClass="text-accent-green"
-                                    newItemIds={newItemIds}
-                                />
-
-                                <PolicyBlockView
-                                    title="Low Potential (Gatekeep)"
-                                    icon={
-                                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636" />
-                                        </svg>
-                                    }
-                                    block={policy.blocks.lowPotentialPatients}
-                                    accentClass="text-accent-red"
-                                    newItemIds={newItemIds}
-                                />
-
-                                <div className="grid grid-cols-2 gap-8 border-t border-border/40 pt-10">
-                                    <PolicyBlockView
-                                        title="Conditional"
-                                        icon={null}
-                                        block={policy.blocks.inBetween}
-                                        accentClass="text-accent-amber"
-                                        newItemIds={newItemIds}
-                                    />
-
-                                    <PolicyBlockView
-                                        title="Directives"
-                                        icon={null}
-                                        block={policy.blocks.forNonQualified}
-                                        accentClass="text-accent-blue"
-                                        newItemIds={newItemIds}
-                                    />
+                            isLegacy ? (
+                                <div className="flex flex-col items-center justify-center h-full opacity-40 text-center px-8">
+                                    <p className="text-sm font-serif italic">Policy uses a legacy format.</p>
+                                    <p className="text-xs mt-2 text-text-secondary">Continue the conversation to rebuild it in the new format.</p>
                                 </div>
-
-                                {policy.rules.length > 0 && (
-                                    <div className="pt-10 border-t border-border/40">
-                                        <h2 className="text-[10px] font-bold text-text-primary uppercase tracking-[0.2em] mb-8 opacity-40">
-                                            Actionable Decision Rules
-                                        </h2>
-
-                                        <div className="space-y-8">
-                                            {(['gate', 'prerequisite', 'accelerator', 'action'] as const).map((ruleType) => {
-                                                const rules = policy.rules.filter((r) => r.type === ruleType);
-                                                if (rules.length === 0) return null;
-                                                const config = RULE_TYPE_CONFIG[ruleType];
-                                                return (
-                                                    <div key={ruleType}>
-                                                        <h3 className={`text-[9px] font-bold uppercase tracking-widest mb-4 opacity-70 ${config.accentClass}`}>
-                                                            {config.label}
-                                                        </h3>
-                                                        <ul className="space-y-4">
-                                                            {rules.map((rule) => {
-                                                                const isNew = newItemIds.has(rule.id);
-                                                                return (
-                                                                    <motion.li
-                                                                        key={rule.id}
-                                                                        layout
-                                                                        className="text-[13px] leading-relaxed group"
-                                                                    >
-                                                                        <div className="flex gap-3">
-                                                                            <span className="text-text-secondary opacity-30 font-serif italic text-sm">if</span>
-                                                                            <p className="text-text-primary">
-                                                                                {rule.condition}{' '}
-                                                                                <span className="text-text-secondary opacity-30 font-serif italic mx-1">then</span>{' '}
-                                                                                <span className="font-medium">{rule.outcome}</span>
-                                                                            </p>
-                                                                        </div>
-                                                                    </motion.li>
-                                                                );
-                                                            })}
-                                                        </ul>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
+                            ) : (
+                                <div className="space-y-10">
+                                    {CATEGORY_ORDER.map((categoryType) => {
+                                        const rules = policy.rules.filter((r) => r.categoryType === categoryType);
+                                        if (rules.length === 0) return null;
+                                        const config = CATEGORY_CONFIG[categoryType];
+                                        return (
+                                            <div key={categoryType}>
+                                                <div className="flex items-baseline gap-3 mb-4">
+                                                    <h3 className={`text-[10px] font-bold uppercase tracking-[0.2em] opacity-80 ${config.accentClass}`}>
+                                                        {config.label}
+                                                    </h3>
+                                                    <div className="h-px flex-1 bg-border/30" />
+                                                </div>
+                                                <ul className="space-y-4">
+                                                    <AnimatePresence initial={false}>
+                                                        {rules.map((rule) => {
+                                                            const isNew = newRuleIds.has(rule.id);
+                                                            return (
+                                                                <motion.li
+                                                                    key={rule.id}
+                                                                    layout
+                                                                    initial={{ opacity: 0, x: -4 }}
+                                                                    animate={{
+                                                                        opacity: 1,
+                                                                        x: 0,
+                                                                        borderLeftColor: isNew ? 'var(--color-accent-blue)' : 'transparent',
+                                                                    }}
+                                                                    exit={{ opacity: 0, scale: 0.95 }}
+                                                                    transition={{ duration: 0.4 }}
+                                                                    className={`text-[13px] text-text-primary leading-relaxed pl-4 border-l-2 border-transparent transition-colors duration-1000 ${
+                                                                        isNew ? 'border-accent-blue/40 bg-accent-blue/5 py-1' : ''
+                                                                    }`}
+                                                                >
+                                                                    <span className="opacity-90">{rule.description}</span>
+                                                                </motion.li>
+                                                            );
+                                                        })}
+                                                    </AnimatePresence>
+                                                </ul>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )
                         ) : (
                             <div className="flex flex-col items-center justify-center h-full opacity-20">
                                 <svg className="w-12 h-12 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>

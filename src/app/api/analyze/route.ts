@@ -1,7 +1,7 @@
 import { client } from '@/lib/claude';
 import { createClient } from '@/lib/supabase/server';
 import { V2_SYSTEM_PROMPT, buildV2Messages } from '@/lib/prompts-v1';
-import type { ClarificationQuestion, ConsultationPolicy, PolicyChallenge, Reflection, V2AnalysisResponse } from '@/lib/types';
+import type { ClarificationQuestion, ConsultationPolicy, PolicyChallenge, PolicyRule, Reflection, V2AnalysisResponse } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -139,13 +139,11 @@ export async function POST(req: Request) {
                         if (parsed.policy) {
                             parsed.policy.version =
                                 parsed.policy.version ?? (currentPolicy ? currentPolicy.version + 1 : 1);
-                            parsed.policy.blocks = parsed.policy.blocks ?? {
-                                highPotentialPatients: { items: [] },
-                                lowPotentialPatients: { items: [] },
-                                inBetween: { items: [] },
-                                forNonQualified: { items: [] },
-                            };
-                            parsed.policy.rules = parsed.policy.rules ?? [];
+                            parsed.policy.rules = (parsed.policy.rules ?? []).map((r: PolicyRule) => ({
+                                ...r,
+                                id: r.id ?? crypto.randomUUID(),
+                                categoryType: r.categoryType ?? 'cancel',
+                            }));
                         }
 
                         controller.enqueue(

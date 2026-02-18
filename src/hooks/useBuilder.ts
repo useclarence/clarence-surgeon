@@ -15,23 +15,20 @@ import type {
 
 const ONBOARDING_QUESTIONS = [
     {
-        intro: "Welcome! I'll help you formalize your consultation policy. Let's start with 4 questions to understand your practice.",
-        question: 'What is the ideal type of patient you currently see in consultation?',
+        intro: "Welcome! I'll help you formalize your consultation policy. Let's start with 3 questions to understand your practice.",
+        question: 'Which patients need urgent consultation? (red flags, acute injuries, neurological emergencies...)',
     },
     {
-        question: 'What type of patient would you consider to have low surgical potential?',
+        question: 'Which patients are your core surgical candidates for standard consultation?',
     },
     {
-        question: 'Is there an in-between: patients who qualify but with low or uncertain surgical potential?',
-    },
-    {
-        question: 'For non-qualifying patients, what would you like to offer them? (advice, exams to complete, specialist referral, colleague...)',
+        question: 'Which patients should have their consultation canceled and be redirected? Where should they go? (physiotherapy, pain management, another specialist...)',
     },
 ];
 
-function makeOnboardingMessage(step: 0 | 1 | 2 | 3): BuilderMessage {
+function makeOnboardingMessage(step: 0 | 1 | 2): BuilderMessage {
     const q = ONBOARDING_QUESTIONS[step]!;
-    const content = q.intro ? `${q.intro}\n\n**Question ${step + 1}/4:** ${q.question}` : `**Question ${step + 1}/4:** ${q.question}`;
+    const content = q.intro ? `${q.intro}\n\n**Question ${step + 1}/3:** ${q.question}` : `**Question ${step + 1}/3:** ${q.question}`;
     return {
         id: `onboarding-q${step}`,
         role: 'assistant',
@@ -55,13 +52,13 @@ function builderReducer(state: BuilderState, action: BuilderAction): BuilderStat
             return { ...state, messages: [...state.messages, action.message] };
         case 'ADVANCE_ONBOARDING': {
             const nextStep = (state.onboardingStep as number) + 1;
-            if (nextStep >= 4) {
+            if (nextStep >= 3) {
                 return { ...state, onboardingStep: 'complete' };
             }
-            const nextQ = makeOnboardingMessage(nextStep as 0 | 1 | 2 | 3);
+            const nextQ = makeOnboardingMessage(nextStep as 0 | 1 | 2);
             return {
                 ...state,
-                onboardingStep: nextStep as 0 | 1 | 2 | 3,
+                onboardingStep: nextStep as 0 | 1 | 2,
                 messages: [...state.messages, nextQ],
             };
         }
@@ -130,7 +127,7 @@ export function useBuilder(agent: Agent) {
             const userMsgCount = agent.conversationHistory.filter(
                 (m) => m.role === 'user'
             ).length;
-            initialOnboardingStep = userMsgCount >= 4 ? 'complete' : (Math.min(userMsgCount, 3) as 0 | 1 | 2 | 3);
+            initialOnboardingStep = userMsgCount >= 3 ? 'complete' : (Math.min(userMsgCount, 2) as 0 | 1 | 2);
         }
     }
 
@@ -204,10 +201,9 @@ export function useBuilder(agent: Agent) {
         const current = stateRef.current;
         const userMessages = current.messages.filter((m) => m.role === 'user');
         const labels = [
-            'Q1 — High potential patients (ideal surgical candidates)',
-            'Q2 — Low potential patients (low surgical potential)',
-            'Q3 — In-between (uncertain surgical potential)',
-            'Q4 — For non-qualifying patients (redirect/advice)',
+            'Q1 — Urgent cases (patients needing fast-track consultation)',
+            'Q2 — Standard cases (core surgical candidates)',
+            'Q3 — Cancel & redirect (patients to redirect elsewhere)',
         ];
         return labels
             .map((label, i) => `${label}:\n"${userMessages[i]?.content ?? '(no answer)'}"`)
@@ -327,14 +323,14 @@ export function useBuilder(agent: Agent) {
 
             const currentStep = stateRef.current.onboardingStep;
 
-            // During onboarding (steps 0-2): advance to next question, no API call
-            if (typeof currentStep === 'number' && currentStep < 3) {
+            // During onboarding (steps 0-1): advance to next question, no API call
+            if (typeof currentStep === 'number' && currentStep < 2) {
                 dispatch({ type: 'ADVANCE_ONBOARDING' });
                 return;
             }
 
-            // Step 3 (last onboarding question): advance to 'complete' then call API with bundled answers
-            if (currentStep === 3) {
+            // Step 2 (last onboarding question): advance to 'complete' then call API with bundled answers
+            if (currentStep === 2) {
                 dispatch({ type: 'ADVANCE_ONBOARDING' });
                 processingRef.current = true;
                 dispatch({ type: 'START_PROCESSING', context: 'analyzing' });
