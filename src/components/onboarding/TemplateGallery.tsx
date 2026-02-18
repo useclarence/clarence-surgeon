@@ -147,9 +147,8 @@ function ShoulderTemplateDetails() {
                                 return (
                                     <tr
                                         key={`${row.referred}-${row.onset}-${row.consulted}-${row.treatment}`}
-                                        className={`${index === 0 ? '' : 'border-t'} ${
-                                            surgeonPath ? 'border-flow-blue/20 bg-flow-blue/8' : 'border-border/35 bg-bg-primary/35'
-                                        }`}
+                                        className={`${index === 0 ? '' : 'border-t'} ${surgeonPath ? 'border-flow-blue/20 bg-flow-blue/8' : 'border-border/35 bg-bg-primary/35'
+                                            }`}
                                     >
                                         <td className="px-3 py-2 text-text-secondary">{row.referred}</td>
                                         <td className="px-3 py-2 text-text-secondary">{row.onset}</td>
@@ -157,11 +156,10 @@ function ShoulderTemplateDetails() {
                                         <td className="px-3 py-2 text-text-secondary">{row.treatment}</td>
                                         <td className="px-3 py-2">
                                             <span
-                                                className={`inline-flex items-center rounded-full border px-2 py-0.5 font-medium ${
-                                                    surgeonPath
+                                                className={`inline-flex items-center rounded-full border px-2 py-0.5 font-medium ${surgeonPath
                                                         ? 'border-flow-blue/35 bg-flow-blue/12 text-flow-blue'
                                                         : 'border-border/55 bg-bg-primary/75 text-text-secondary'
-                                                }`}
+                                                    }`}
                                             >
                                                 {row.recommendation}
                                             </span>
@@ -326,7 +324,7 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
         fetch('/api/agents')
             .then((res) => res.json())
             .then((agents: Agent[]) => setBuildingAgents(agents.filter((a) => a.status === 'building')))
-            .catch(() => {});
+            .catch(() => { });
     }, []);
 
     const filtered = (activeCategory === 'All'
@@ -385,11 +383,10 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
                             <button
                                 key={cat}
                                 onClick={() => setActiveCategory(cat)}
-                                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${
-                                    activeCategory === cat
+                                className={`px-3.5 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${activeCategory === cat
                                         ? 'bg-flow-blue/15 text-flow-blue border border-flow-blue/30'
                                         : 'bg-bg-secondary/40 text-text-secondary hover:text-text-primary border border-transparent hover:border-border/40'
-                                }`}
+                                    }`}
                             >
                                 {cat}
                             </button>
@@ -504,7 +501,7 @@ export function TemplateGallery({ onBuildCustom }: TemplateGalleryProps) {
 
     // ── Landing: Two-path choice ──
     return (
-        <div className="h-full flex flex-col items-center justify-center px-10">
+        <div className="flex flex-col items-center justify-center px-10 py-10">
             <motion.div
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
