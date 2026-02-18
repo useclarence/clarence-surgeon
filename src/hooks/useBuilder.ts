@@ -101,6 +101,8 @@ function builderReducer(state: BuilderState, action: BuilderAction): BuilderStat
             };
         case 'TOGGLE_POLICY_DRAWER':
             return { ...state, showPolicyDrawer: !state.showPolicyDrawer };
+        case 'SUBMIT_POLICY':
+            return { ...state, submitted: true, status: 'idle' };
         default:
             return state;
     }
@@ -141,6 +143,7 @@ export function useBuilder(agent: Agent) {
         showPolicyDrawer: false,
         interimText: '',
         streamingThought: '',
+        submitted: false,
     };
 
     const [state, dispatch] = useReducer(builderReducer, initialState);
@@ -390,10 +393,27 @@ export function useBuilder(agent: Agent) {
         [bundleClarificationAnswers, callApi]
     );
 
+    const submitPolicy = useCallback(() => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        fetch(`/api/agents/${agent.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                policy: stateRef.current.policy,
+                conversationHistory: stateRef.current.messages,
+                onboardingComplete: true,
+            }),
+        }).catch((err) => console.error('Failed to persist on submit:', err));
+        dispatch({ type: 'SUBMIT_POLICY' });
+    }, [agent.id]);
+
     return {
         state,
         dispatch,
         sendMessage,
         answerClarification,
+        submitPolicy,
     };
 }

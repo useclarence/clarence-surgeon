@@ -94,6 +94,7 @@ export interface BuilderState {
     showPolicyDrawer: boolean;
     interimText: string;
     streamingThought: string;
+    submitted: boolean;
 }
 
 export type BuilderAction =
@@ -108,7 +109,8 @@ export type BuilderAction =
     | { type: 'ANSWER_CLARIFICATION'; messageId: string; clarificationId: string; answer: string }
     | { type: 'TOGGLE_POLICY_DRAWER' }
     | { type: 'APPEND_THINKING'; text: string }
-    | { type: 'SET_THINKING'; text: string };
+    | { type: 'SET_THINKING'; text: string }
+    | { type: 'SUBMIT_POLICY' };
 
 // ── API Response ──
 
