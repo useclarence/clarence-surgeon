@@ -50,7 +50,7 @@ function SubmittedConfirmation({ agentName, onBackToTemplates }: { agentName: st
 export function BuilderView({ agent }: BuilderViewProps) {
     const router = useRouter();
     const { actions } = useOnboardingFlowContext();
-    const { state, dispatch, sendMessage, answerClarification, submitPolicy } = useBuilder(agent);
+    const { state, dispatch, sendMessage, answerClarification, editMessage, submitPolicy } = useBuilder(agent);
 
     const speechBufferRef = useRef<string[]>([]);
 
@@ -135,6 +135,7 @@ export function BuilderView({ agent }: BuilderViewProps) {
                     ruleCount={state.policy?.rules.length ?? 0}
                     answerCount={state.messages.filter((m) => m.role === 'user').length}
                     onAnswerClarification={answerClarification}
+                    onEditMessage={editMessage}
                 />
 
                 <DictationZone

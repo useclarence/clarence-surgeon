@@ -12,6 +12,7 @@ interface BuilderConversationProps {
     ruleCount: number;
     answerCount: number;
     onAnswerClarification: (messageId: string, clarificationId: string, answer: string) => void;
+    onEditMessage: (messageId: string, content: string) => void;
 }
 
 const BODY_PART_COUNT = 13;
@@ -249,6 +250,7 @@ export function BuilderConversation({
     ruleCount,
     answerCount,
     onAnswerClarification,
+    onEditMessage,
 }: BuilderConversationProps) {
     const bottomRef = useRef<HTMLDivElement>(null);
     const [buildProgress, setBuildProgress] = useState(0);
@@ -302,6 +304,7 @@ export function BuilderConversation({
                     onAnswerClarification={(clarificationId, answer) =>
                         onAnswerClarification(msg.id, clarificationId, answer)
                     }
+                    onEdit={(content) => onEditMessage(msg.id, content)}
                 />
             ))}
 

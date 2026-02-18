@@ -92,6 +92,7 @@ export type BuilderAction =
     | { type: 'PROCESSING_COMPLETE'; message: BuilderMessage; policy: ConsultationPolicy | null }
     | { type: 'PROCESSING_ERROR' }
     | { type: 'ANSWER_CLARIFICATION'; messageId: string; clarificationId: string; answer: string }
+    | { type: 'EDIT_MESSAGE'; messageId: string; content: string }
     | { type: 'TOGGLE_POLICY_DRAWER' }
     | { type: 'APPEND_THINKING'; text: string }
     | { type: 'SET_THINKING'; text: string }

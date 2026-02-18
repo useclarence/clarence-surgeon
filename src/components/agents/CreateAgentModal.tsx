@@ -67,11 +67,10 @@ export function CreateAgentModal({ open, onClose, onCreate }: CreateAgentModalPr
                                     key={s}
                                     type="button"
                                     onClick={() => setSpecialty(s)}
-                                    className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all cursor-pointer ${
-                                        specialty === s
+                                    className={`text-[9px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full border transition-all cursor-pointer ${specialty === s
                                             ? 'border-accent-blue bg-accent-blue text-white'
                                             : 'border-border/60 text-text-secondary hover:border-accent-blue/40 hover:text-text-primary'
-                                    }`}
+                                        }`}
                                 >
                                     {s}
                                 </button>
@@ -93,7 +92,7 @@ export function CreateAgentModal({ open, onClose, onCreate }: CreateAgentModalPr
                         disabled={!name.trim()}
                         className="px-8 py-3 rounded-sm text-[10px] font-bold uppercase tracking-widest bg-accent-blue text-white hover:bg-accent-blue/90 transition-all shadow-sm disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
                     >
-                        Continue to Testing
+                        Create
                     </button>
                 </div>
             </form>

@@ -117,6 +117,13 @@ function builderReducer(state: BuilderState, action: BuilderAction): BuilderStat
                     };
                 }),
             };
+        case 'EDIT_MESSAGE':
+            return {
+                ...state,
+                messages: state.messages.map((m) =>
+                    m.id === action.messageId ? { ...m, content: action.content } : m
+                ),
+            };
         case 'TOGGLE_POLICY_DRAWER':
             return { ...state, showPolicyDrawer: !state.showPolicyDrawer };
         case 'SUBMIT_POLICY':
@@ -506,6 +513,10 @@ export function useBuilder(agent: Agent) {
         [bundleClarificationAnswers, callApi, completeSubmission]
     );
 
+    const editMessage = useCallback((messageId: string, content: string) => {
+        dispatch({ type: 'EDIT_MESSAGE', messageId, content });
+    }, []);
+
     const submitPolicy = useCallback(() => {
         completeSubmission();
     }, [completeSubmission]);
@@ -515,6 +526,7 @@ export function useBuilder(agent: Agent) {
         dispatch,
         sendMessage,
         answerClarification,
+        editMessage,
         submitPolicy,
     };
 }
