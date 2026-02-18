@@ -51,6 +51,15 @@ export function MessageBubble({ message, onAnswerClarification }: MessageBubbleP
                             </div>
                         )}
 
+                        {/* Standard assistant reflections / summary text */}
+                        {!message.isOnboarding && message.content.trim() && (
+                            <div className="rounded-xl border border-border/60 bg-bg-panel/40 px-4 py-3">
+                                <p className="text-sm text-text-primary leading-relaxed whitespace-pre-line">
+                                    {message.content}
+                                </p>
+                            </div>
+                        )}
+
                         {/* Clarification questions (batch — sequential reveal) */}
                         {message.clarifications && message.clarifications.length > 0 && (
                             <div className="space-y-6 mt-4 border-l-2 border-accent-blue/10 pl-8">

@@ -88,6 +88,14 @@ export function BuilderView({ agent }: BuilderViewProps) {
         router.push('/agents');
     }, [actions, router]);
 
+    const handleSubmitPolicy = useCallback(() => {
+        const confirmed = window.confirm(
+            'This will send your agent to construction. Are you sure your rules are complete?'
+        );
+        if (!confirmed) return;
+        submitPolicy();
+    }, [submitPolicy]);
+
     if (state.submitted) {
         return <SubmittedConfirmation agentName={agent.name} onBackToTemplates={handleBackToTemplates} />;
     }
@@ -137,7 +145,7 @@ export function BuilderView({ agent }: BuilderViewProps) {
                     onStopRecording={handleStopRecording}
                     onSendText={handleSendText}
                     canSubmit={canSubmit}
-                    onSubmit={submitPolicy}
+                    onSubmit={handleSubmitPolicy}
                 />
             </div>
 

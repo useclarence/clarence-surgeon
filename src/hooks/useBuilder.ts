@@ -24,15 +24,28 @@ function getErrorStatus(error: unknown): number | null {
 const ONBOARDING_QUESTIONS = [
     {
         intro: "Welcome! I'll help you formalize your consultation policy. Let's start with 3 questions to understand your practice.",
-        question: 'Which patients need urgent consultation? (red flags, acute injuries, neurological emergencies...)',
+        question: 'Who do you need to see most urgently? (red flags, acute injuries, neurological emergencies...)',
     },
     {
-        question: 'Which patients are your core surgical candidates for standard consultation?',
+        question: 'Are there any patients you should still see, but with less urgency?',
     },
     {
-        question: 'Which patients should have their consultation canceled and be redirected? Where should they go? (physiotherapy, pain management, another specialist...)',
+        question: 'Who should you absolutely not see, and where should they be redirected? (physiotherapy, pain management, another specialist...)',
     },
 ];
+
+const FINAL_RULES_CHECK_ID = 'final_rules_check';
+const FINAL_RULES_CHECK_QUESTION = 'Do you have anything else to add to your rules?';
+const FINAL_RULES_CHECK_SUGGESTIONS = ['Yes', 'No'];
+
+function makeFinalRulesCheckQuestion(): ClarificationQuestion {
+    return {
+        id: FINAL_RULES_CHECK_ID,
+        question: FINAL_RULES_CHECK_QUESTION,
+        suggestions: FINAL_RULES_CHECK_SUGGESTIONS,
+        answered: false,
+    };
+}
 
 function makeOnboardingMessage(step: 0 | 1 | 2): BuilderMessage {
     const q = ONBOARDING_QUESTIONS[step]!;
@@ -267,6 +280,7 @@ export function useBuilder(agent: Agent) {
                 const reader = res.body.getReader();
                 const decoder = new TextDecoder();
                 let buffer = '';
+                let receivedResult = false;
 
                 while (true) {
                     const { done, value } = await reader.read();
@@ -281,43 +295,80 @@ export function useBuilder(agent: Agent) {
                         const data = line.slice(6);
                         if (data === '[DONE]') continue;
 
+                        let parsed:
+                            | {
+                                  type: string;
+                                  content?: string;
+                                  data?: V2AnalysisResponse;
+                                  message?: string;
+                              }
+                            | null = null;
+
                         try {
-                            const parsed = JSON.parse(data) as {
+                            parsed = JSON.parse(data) as {
                                 type: string;
                                 content?: string;
                                 data?: V2AnalysisResponse;
+                                message?: string;
                             };
-
-                            if (parsed.type === 'thinking' && parsed.content) {
-                                dispatch({ type: 'APPEND_THINKING', text: parsed.content });
-                            } else if (parsed.type === 'status' && parsed.content) {
-                                dispatch({ type: 'SET_THINKING', text: parsed.content });
-                            } else if (parsed.type === 'result' && parsed.data) {
-                                const result = parsed.data;
-                                const clarifications = result.nextQuestions.length > 0
-                                    ? result.nextQuestions.map((q) => ({ ...q, answered: false }))
-                                    : undefined;
-
-                                const assistantMsg: BuilderMessage = {
-                                    id: assistantMsgId,
-                                    role: 'assistant',
-                                    content: result.reflections.map((r: Reflection) => r.content).join('\n'),
-                                    timestamp: Date.now(),
-                                    reflections: result.reflections,
-                                    clarifications,
-                                    challenges: result.challenges,
-                                };
-
-                                dispatch({
-                                    type: 'PROCESSING_COMPLETE',
-                                    message: assistantMsg,
-                                    policy: result.policy,
-                                });
-                            }
                         } catch {
                             // Incomplete JSON chunk, skip
+                            continue;
+                        }
+
+                        if (parsed.type === 'thinking' && parsed.content) {
+                            dispatch({ type: 'APPEND_THINKING', text: parsed.content });
+                        } else if (parsed.type === 'status' && parsed.content) {
+                            dispatch({ type: 'SET_THINKING', text: parsed.content });
+                        } else if (parsed.type === 'result' && parsed.data) {
+                            receivedResult = true;
+                            const result = parsed.data;
+                            const modelClarifications = result.nextQuestions.length > 0
+                                ? result.nextQuestions.map((q) => ({ ...q, answered: false }))
+                                : [];
+                            const hasAskedFollowUpBefore = currentState.messages.some((m) =>
+                                (m.clarifications ?? []).some((c) => c.id !== FINAL_RULES_CHECK_ID)
+                            );
+                            const hasPendingFinalRulesCheck = currentState.messages.some((m) =>
+                                (m.clarifications ?? []).some(
+                                    (c) => c.id === FINAL_RULES_CHECK_ID && !c.answered
+                                )
+                            );
+                            const shouldAskFinalRulesCheck =
+                                modelClarifications.length === 0 &&
+                                currentState.onboardingStep === 'complete' &&
+                                hasAskedFollowUpBefore &&
+                                !hasPendingFinalRulesCheck &&
+                                !currentState.submitted;
+                            const clarifications = modelClarifications.length > 0
+                                ? modelClarifications
+                                : shouldAskFinalRulesCheck
+                                  ? [makeFinalRulesCheckQuestion()]
+                                  : undefined;
+
+                            const assistantMsg: BuilderMessage = {
+                                id: assistantMsgId,
+                                role: 'assistant',
+                                content: result.reflections.map((r: Reflection) => r.content).join('\n'),
+                                timestamp: Date.now(),
+                                reflections: result.reflections,
+                                clarifications,
+                                challenges: result.challenges,
+                            };
+
+                            dispatch({
+                                type: 'PROCESSING_COMPLETE',
+                                message: assistantMsg,
+                                policy: result.policy,
+                            });
+                        } else if (parsed.type === 'error') {
+                            throw new Error(parsed.message ?? 'AI service error');
                         }
                     }
+                }
+
+                if (!receivedResult) {
+                    throw new Error('AI response ended without a structured result');
                 }
             } catch (err) {
                 if (getErrorStatus(err) === 401) {
@@ -333,6 +384,14 @@ export function useBuilder(agent: Agent) {
                     }
                 } else {
                     console.error('Analysis failed:', err);
+                    const reason = err instanceof Error ? err.message : 'Unknown error';
+                    const assistantMsg: BuilderMessage = {
+                        id: crypto.randomUUID(),
+                        role: 'assistant',
+                        content: `I could not parse that update cleanly (${reason}). Please retry your last answer, or continue with a new instruction.`,
+                        timestamp: Date.now(),
+                    };
+                    dispatch({ type: 'ADD_USER_MESSAGE', message: assistantMsg });
                 }
                 dispatch({ type: 'PROCESSING_ERROR' });
             } finally {
@@ -341,6 +400,23 @@ export function useBuilder(agent: Agent) {
         },
         [agent.id]
     );
+
+    const completeSubmission = useCallback(() => {
+        if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+        }
+        fetch(`/api/agents/${agent.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                policy: stateRef.current.policy,
+                conversationHistory: stateRef.current.messages,
+                onboardingComplete: true,
+                status: 'building',
+            }),
+        }).catch((err) => console.error('Failed to persist on submit:', err));
+        dispatch({ type: 'SUBMIT_POLICY' });
+    }, [agent.id]);
 
     const sendMessage = useCallback(
         async (text: string) => {
@@ -389,6 +465,14 @@ export function useBuilder(agent: Agent) {
         (messageId: string, clarificationId: string, answer: string) => {
             dispatch({ type: 'ANSWER_CLARIFICATION', messageId, clarificationId, answer });
 
+            if (clarificationId === FINAL_RULES_CHECK_ID) {
+                const normalized = answer.trim().toLowerCase();
+                if (normalized === 'n' || normalized.startsWith('no')) {
+                    completeSubmission();
+                }
+                return;
+            }
+
             // Wait a tick for state to update, then check if all questions are answered
             setTimeout(() => {
                 const currentState = stateRef.current;
@@ -419,25 +503,12 @@ export function useBuilder(agent: Agent) {
                 }
             }, 0);
         },
-        [bundleClarificationAnswers, callApi]
+        [bundleClarificationAnswers, callApi, completeSubmission]
     );
 
     const submitPolicy = useCallback(() => {
-        if (saveTimeoutRef.current) {
-            clearTimeout(saveTimeoutRef.current);
-        }
-        fetch(`/api/agents/${agent.id}`, {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                policy: stateRef.current.policy,
-                conversationHistory: stateRef.current.messages,
-                onboardingComplete: true,
-                status: 'building',
-            }),
-        }).catch((err) => console.error('Failed to persist on submit:', err));
-        dispatch({ type: 'SUBMIT_POLICY' });
-    }, [agent.id]);
+        completeSubmission();
+    }, [completeSubmission]);
 
     return {
         state,
